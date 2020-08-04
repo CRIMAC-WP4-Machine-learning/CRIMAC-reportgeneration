@@ -1,0 +1,25 @@
+# This repository contain the code to generate the reports from LSSS files.
+
+# For testing you can clone the testdata:
+git clone https://github.com/nilsolav/LSSS-label-versioning
+# The raw data have to be copied from pallas: /scratch/nilsolav
+
+# Build the docker image
+docker build --tag crimacreportgeneration:test .
+
+# Generate and run the container.
+
+# Running the docker is a bit more tricky since both x-access and the LSSS dongle needs to be added to
+# the docker
+
+# This explain how it works on Windows host. The display can be set to localhost from the docker container:
+# https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde
+set-variable -name DISPLAY -value 10.1.97.106:0.0
+# NB replace the IP with your own
+
+# Run the container
+docker run -it --name crimacreports -e DISPLAY=$DISPLAY -p 8989:8989 -v D:\DATA\LSSS-label-versioning\S2017838\ACOUSTIC\memmap:/data/ crimacreportgeneration:test
+# NB replace path with your own
+
+# Remove the stopped container
+docker container prune
