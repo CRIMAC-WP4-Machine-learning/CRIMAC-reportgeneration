@@ -1,25 +1,94 @@
-# This repository contain the code to generate the reports from LSSS files.
+# This repository contain the code to generate the reports from preprocessed CRIMAc files
 
-# For testing you can clone the testdata:
-git clone https://github.com/nilsolav/LSSS-label-versioning
-# The raw data have to be copied from pallas: /scratch/nilsolav
+A docker image to regrid and generate reports from preprocessed CRIMAC files. The pre-processed data is stored as a  `zarr`/`netcdf` files on disk per survey,
+and the energy is allocated to classes based on interpretation masks on the same grid. The interpretation masks per class has a probability 
+from 0-1, typically from softmax outputs but can also be other probabilities in the same range. The pixel are associated to a class based on a threshold (input) 
+on the probability.
 
-# Build the docker image
-docker build --tag crimacreportgeneration:test .
+The ouput is the standard ICES data formar used in the ICES acoustic database and is a standard input to the StoX index cacluation program.
 
-# Generate and run the container.
+## Features
 
-# Running the docker is a bit more tricky since both x-access and the LSSS dongle needs to be added to
-# the docker
+1. Can integrate/regrid onto a new time/distance and depth/range grid by acoustic class
+2. Processing and re-gridding the channels are done in parallel (using `Dask`’s delayed).
+3. Automatic resuming from the last `ping_time` if the output file exists.
+4. Batch processing is done by appending directly to the output file, should be memory efficient.
+5. The image of this repository is available at Docker Hub (https://hub.docker.com/r/crimac/xxx).
 
-# This explain how it works on Windows host. The display can be set to localhost from the docker container:
-# https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde
-set-variable -name DISPLAY -value 10.1.97.106:0.0
-# NB replace the IP with your own
+## Options to run
 
-# Run the container
-docker run -it --name crimacreports -e DISPLAY=$DISPLAY -p 8989:8989 -v D:\DATA\LSSS-label-versioning\S2017838\ACOUSTIC\memmap:/data/ crimacreportgeneration:test
-# NB replace path with your own
+1. Four directories need to be mounted:
 
-# Remove the stopped container
-docker container prune
+    1. `/datain` should be mounted to the data directory where the preprocessed data files are located.
+    2. `/dataout` should be mounted to the directory where the reports are written.
+    3. `/workin` should be mounted to the directory where the zarr interpretation files located.
+    4. `/bottomin` should be mounted to the directory where the zarr bottom detection data is located (_optional_).
+
+2. Choose the threshold for the classes: 
+
+    ```bash
+    --env THRESHOLD=0.8
+    ```
+
+4. Select the horizontal integration type:
+
+    ```bash
+    --env HOR_INTEGRATION_TYPE=time
+
+    --env HOR_INTEGRATION_TYPE=distance
+    ```
+
+5. Select the vertical integration type:
+
+    ```bash
+    --env VERT_INTEGRATION_TYPE=range
+
+    --env VERT_INTEGRATION_TYPE=depth # Not implemented in version 1
+    ```
+
+6. Choose the vertical integration grid in depth (VERT_INTEGRATION_TYPE=range) or range (VERT_INTEGRATION_TYPE=depth) and the 
+horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or seconds (INTEGRATION_TYPE=time): 
+
+    ```bash
+    --env DELTA_RANGE=10 # (meters)
+    
+    --env DELTA_DISTANCE=1 # (nautical miles)
+    
+    --env DELTA_TIME=600 # (seconds)
+    ```
+7. Chose the integrator
+    ```bash
+    --env INTEGRATOR=simple # A data voxel to belong to a specfic integration grid cell and no interpolation is done
+    
+    --env INTEGRATOR=conservation # The input data is regridded to the integration grid using energy conservative regridding
+    ```
+
+8. Select file name output (optional,  default to `out.<zarr/nc>.luf25`)
+
+    ```bash
+    --env OUTPUT_NAME=S2020842
+    ```
+
+9. Set if we want a visual overview of the integrated grid (in a PNG format image).
+
+    ```bash
+    --env WRITE_PNG=overview.png # No file is generated if left out
+    ```
+
+## Example
+
+```bash
+(must be updated)
+docker run -it --name pyechopreprocess \
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/EK60/EK60_RAWDATA:/datain \
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/LSSS/WORK:/workin \
+-v /localscratch/ibrahim-echo/out:/dataout  \
+--security-opt label=disable \
+--env OUTPUT_TYPE=zarr \
+--env MAIN_FREQ=38000 \
+--env MAX_RANGE_SRC=500 \
+--env OUTPUT_NAME=S2020842 \
+--env WRITE_PNG=0 \
+crimac/preprocessor
+
+```
