@@ -8,6 +8,14 @@ on the probability.
 The ouput is the standard ICES data format used in the ICES acoustic database and is a standard input to the StoX index cacluation program. The XSD schema for 
 the format is found here:
 
+Other resources :
+Here are some example data of the LUF25/ICES acoustic format:
+https://github.com/StoXProject/RstoxData/blob/master/inst/testresources/ICES_Acoustic_1.xml
+https://github.com/StoXProject/RstoxData/blob/master/inst/testresources/ICES_Acoustic_2.xml
+
+and their format description:
+https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_description.zip
+
 ## Features
 
 1. Can integrate/regrid onto a new time/distance and depth/range grid by acoustic class
