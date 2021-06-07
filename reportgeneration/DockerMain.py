@@ -12,7 +12,7 @@ class DockerMain :
 
     def __init__(self):
 
-        self.godtogo = self.extractAndCheckInputParameters()
+        self.goodtogo = self.extractAndCheckInputParameters()
 
 
     def extractAndCheckInputParameters(self):
@@ -95,7 +95,7 @@ class DockerMain :
 
     def run(self):
 
-        if self.godtogo:
+        if self.goodtogo:
 
             zarr_gridd = xr.open_zarr('{}{}{}'.format(self.datain, os.sep, self.data_input_name), chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
             zarr_pred = xr.open_zarr('{}{}{}'.format(self.predin, os.sep, self.pred_input_name))
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     dm = DockerMain()
 
-    if dm.godtogo:
+    if dm.goodtogo:
 
         # Setting dask
         tmp_dir = os.path.expanduser(dm.dataout + '/tmp')
