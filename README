@@ -1,4 +1,4 @@
-# This repository contain the code to generate the reports from preprocessed CRIMAc files
+# This repository contain the code to generate the reports from preprocessed CRIMAC files
 
 A docker image to regrid and generate reports from preprocessed CRIMAC files. The pre-processed data is stored as a  `zarr`/`netcdf` files on disk per survey,
 and the energy is allocated to classes based on interpretation masks on the same grid. The interpretation masks per class has a probability 
@@ -42,11 +42,11 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 4. Select the horizontal integration type:
 
     ```bash
-    --env HOR_INTEGRATION_TYPE=time
-
-    --env HOR_INTEGRATION_TYPE=distance
-    
     --env HOR_INTEGRATION_TYPE=ping
+
+    --env HOR_INTEGRATION_TYPE=time
+    
+    --env HOR_INTEGRATION_TYPE=distance
 
     ```
 
@@ -63,19 +63,14 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or seconds (INTEGRATION_TYPE=time): 
 
     ```bash
-    --env DELTA_RANGE=10 # (meters)
+    --env HOR_INTEGRATION_STEP=10 # (pings, seconds,nautical miles )
     
-    --env DELTA_DISTANCE=1 # (nautical miles)
-    
-    --env DELTA_TIME=600 # (seconds)
-    
-    --env DELTA_PING=60 # (pings)
+    --env VERT_INTEGRATION_STEP=1 # (meters)
 
     ```
 7. Chose the integrator
     ```bash
-    --env INTEGRATOR=simple # A data voxel to belong to a specfic integration grid cell and no interpolation is done
-    
+
     --env INTEGRATOR=conservation # The input data is regridded to the integration grid using energy conservative regridding
     ```
 
