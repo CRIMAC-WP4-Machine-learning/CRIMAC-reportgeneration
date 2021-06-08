@@ -30,8 +30,7 @@ class Reportgenerator:
             encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
             self.ds.to_zarr(fname, mode="w", encoding=encoding)
         elif file_ext == '.png':
-            ar = self.ds.to_array()
-            # Remove nan at and of echogram data
+
             vmax = -20
             vmin = -80
             for cat in self.ds['category']:
