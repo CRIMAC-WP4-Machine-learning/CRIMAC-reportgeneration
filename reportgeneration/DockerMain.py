@@ -74,8 +74,8 @@ class DockerMain :
             print('THRESHOLD needs to be float [0,1], exiting')
             return False
 
-        if self.hitype is None or self.hitype not in ['ping', 'time', 'nmi']:
-            print('HOR_INTEGRATION_TYPE no set, valid values : ping | time |nmi, exiting')
+        if self.hitype is None or self.hitype not in ['ping', 'time']:
+            print('HOR_INTEGRATION_TYPE no set, valid values : ping | time, exiting')
             return False
 
         if self.histep is None or not isinstance(self.histep,(float, int)):

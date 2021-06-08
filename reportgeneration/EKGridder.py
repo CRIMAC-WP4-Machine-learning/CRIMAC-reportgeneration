@@ -29,7 +29,18 @@ class EKGridder(XGridder):
         if _type == 'ping':
             sbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']))))
             tbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']), step)))
-            self.ping_time = data['ping_time'][np.arange(0, len(data['ping_time']), step)].values
+            self.ping_time = dask.delayed(xr.DataArray(data['ping_time'][np.arange(0, len(data['ping_time']), step)].values))
+
+        elif _type == 'time':
+            sbins = dask.delayed(self.calckTimeInSeconds)(data['ping_time'])
+            tbins = dask.delayed(xr.DataArray(np.arange(0, sbins[-1].compute(), step)))
+
+            self.ping_time = dask.delayed(
+                xr.DataArray(
+                    np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
+                )
+            )
+
         elif _type == 'range':
             sbins = data['range']
             tbins = dask.delayed(xr.DataArray(np.arange(0, data['range'][-1], step)))
@@ -37,6 +48,14 @@ class EKGridder(XGridder):
             print('{} integration type not defined'.format(_type))
 
         return sbins, tbins
+
+
+    def calckTimeInSeconds(self, mtime):
+
+        dt = (mtime['ping_time'].diff('ping_time') / np.timedelta64(1, 's')).values
+        dt = np.insert(dt, 0, 0, axis=0)
+
+        return xr.DataArray(np.cumsum(dt))
 
 
 
@@ -54,7 +73,7 @@ class EKGridder(XGridder):
             coords=dict(
                 frequency = data['frequency'],
                 range = self.target_v_bins.compute().values,
-                ping_time = self.ping_time
+                ping_time = self.ping_time.compute().values
             )
         )
 
@@ -77,7 +96,7 @@ if __name__ == "__main__":
     MAIN_FREQ = 38000
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
-    HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
+    HOR_INTEGRATION_TYPE = 'time' # 'ping' | 'time' | 'distance'
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
 
@@ -94,7 +113,7 @@ if __name__ == "__main__":
                               chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
 
     rg = EKGridder(
-        zarr_gridd,
+        zarr_gridd.sel(frequency=integrationFreq),
         VERT_INTEGRATION_TYPE,
         VER_INTEGRATION_STEP,
         HOR_INTEGRATION_TYPE,
@@ -104,17 +123,24 @@ if __name__ == "__main__":
 
     xregr = rg.regrid()
 
-    for f in xregr['frequency']:
-        plt.figure()
-        plt.subplot(2, 1, 1)
-        plt.title('sv')
-        plt.imshow(10 * np.log10(zarr_gridd.sel(frequency=f)['sv'].T + 10e-20))
 
-        plt.axis('auto')
+    plt.figure()
+    plt.title('raw and gridded time gridded on {}'.format(HOR_INTEGRATION_TYPE))
+    plt.plot(zarr_gridd['ping_time'].values, zarr_gridd['ping_time'].values, 'x', label='raw ping time')
+    plt.plot(xregr['ping_time'].values,xregr['ping_time'].values,'.',label='gidded ping time')
+    plt.legend()
 
-        plt.subplot(2,1,2)
-        plt.title('sv')
-        plt.imshow(10 * np.log10(xregr['sv'].squeeze().T + 10e-20))
 
-        plt.axis('auto')
-        plt.show()
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.title('sv')
+    plt.imshow(10 * np.log10(zarr_gridd.sel(frequency=integrationFreq)['sv'].T + 10e-20))
+
+    plt.axis('auto')
+
+    plt.subplot(2,1,2)
+    plt.title('sv')
+    plt.imshow(10 * np.log10(xregr['sv'].squeeze().T + 10e-20))
+
+    plt.axis('auto')
+    plt.show()
