@@ -24,7 +24,7 @@ class DockerMain :
 
             _dir = os.path.expanduser(d)
             if not os.path.exists(_dir):
-                print('{} could not be found, exiting'.format(_dir))
+                print('{} could not be found'.format(_dir))
                 return False
 
             mdirs.append(_dir)
@@ -47,47 +47,46 @@ class DockerMain :
         self.vistep = os.getenv('VERT_INTEGRATION_STEP', None)
 
         if self.data_input_name is None:
-            print('DATA_INPUT_NAME no set, exiting')
+            print('DATA_INPUT_NAME no set')
             return False
 
         if self.pred_input_name is None:
-            print('PRED_INPUT_NAME no set, exiting')
+            print('PRED_INPUT_NAME no set')
             return False
 
-        if self.bot_input_name is None:
-            # Optional
-            pass
+        if self.bot_input_name is not None:
+            print('BOT_INPUT_NAME. Masking with bottom data not implimented. Continu without bottom data')
 
         if self.output_name is None:
-            print('INPUT_NAME no set, exiting')
+            print('INPUT_NAME no set')
             return False
 
         if self.threshold is None:
-            print('THRESHOLD no set, exiting')
+            print('THRESHOLD no set')
             return False
 
         if not isinstance(self.threshold, float):
-            print('THRESHOLD needs to be float [0,1],, exiting')
+            print('THRESHOLD needs to be float [0,1]')
             return False
 
         if self.threshold<0 or self.threshold>1:
-            print('THRESHOLD needs to be float [0,1], exiting')
+            print('THRESHOLD needs to be float [0,1]')
             return False
 
         if self.hitype is None or self.hitype not in ['ping', 'time']:
-            print('HOR_INTEGRATION_TYPE no set, valid values : ping | time, exiting')
+            print('HOR_INTEGRATION_TYPE no set, valid values : ping | time')
             return False
 
         if self.histep is None or not isinstance(self.histep,(float, int)):
-            print('HOR_INTEGRATION_STEP no set correctly, exiting')
+            print('HOR_INTEGRATION_STEP no set correctly')
             return False
 
         if self.vitype is None:
-            print('VERT_INTEGRATION_TYPE no set, exiting')
+            print('VERT_INTEGRATION_TYPE no set')
             return False
 
         if self.vistep is None or not isinstance(self.histep, (float, int)):
-            print('VERT_INTEGRATION_STEP no set correctly, exiting')
+            print('VERT_INTEGRATION_STEP no set correctly set')
             return False
 
         return True
@@ -95,27 +94,25 @@ class DockerMain :
 
     def run(self):
 
-        if self.goodtogo:
+        zarr_gridd = xr.open_zarr('{}{}{}'.format(self.datain, os.sep, self.data_input_name), chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
+        zarr_pred = xr.open_zarr('{}{}{}'.format(self.predin, os.sep, self.pred_input_name))
 
-            zarr_gridd = xr.open_zarr('{}{}{}'.format(self.datain, os.sep, self.data_input_name), chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
-            zarr_pred = xr.open_zarr('{}{}{}'.format(self.predin, os.sep, self.pred_input_name))
+        rg = Reportgenerator(
+            zarr_gridd,
+            zarr_pred,
+            self.main_freq,
+            self.threshold,
+            self.vitype,
+            self.vistep,
+            self.hitype,
+            self.histep,
+            self.max_range
+        )
 
-            rg = Reportgenerator(
-                zarr_gridd,
-                zarr_pred,
-                self.main_freq,
-                self.threshold,
-                self.vitype,
-                self.vistep,
-                self.hitype,
-                self.histep,
-                self.max_range
-            )
+        rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
 
-            rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
-
-            if self.write_png is not None:
-                rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
+        if self.write_png is not None:
+            rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
 
 
 
@@ -144,3 +141,6 @@ if __name__ == '__main__':
         client.close()
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
+
+    else :
+        print('Error occured, exiting')
