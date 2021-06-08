@@ -29,7 +29,12 @@ class EKGridder(XGridder):
         if _type == 'ping':
             sbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']))))
             tbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']), step)))
-            self.ping_time = dask.delayed(xr.DataArray(data['ping_time'][np.arange(0, len(data['ping_time']), step)].values))
+
+            self.ping_time = dask.delayed(
+                xr.DataArray(
+                    data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
+                )
+            )
 
         elif _type == 'time':
             sbins = dask.delayed(self.calckTimeInSeconds)(data['ping_time'])
@@ -84,7 +89,6 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
     import os
-    import sys
 
     baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data'
 
@@ -96,12 +100,12 @@ if __name__ == "__main__":
     MAIN_FREQ = 38000
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
-    HOR_INTEGRATION_TYPE = 'time' # 'ping' | 'time' | 'distance'
+    HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
 
-    HOR_INTEGRATION_STEP = 10  # seconds | pings | meters | nmi
-    VER_INTEGRATION_STEP = 5  # Always in meters
+    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
+    VER_INTEGRATION_STEP = 10  # Always in meters
 
     OUTPUT_NAME = 'S2020842.xml'  # file name output (optional,  default to `out.<zarr/nc>`)
     WRITE_PNG = 'overview.png'  # No file is generated if left out
