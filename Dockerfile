@@ -1,23 +1,24 @@
-FROM python:3.8 as builder
+FROM python:3 as builder
 
 RUN mkdir /install
 WORKDIR /install
 
-COPY requirements.txt /requirements.txt
+# Copy ca.cer (certificate authority) if it exists. Necessary in a SSL decrypt evironment.
+COPY requirements.txt ca.cer* /
 
-RUN pip install --prefix=/install -r /requirements.txt
+RUN apt-get update -y && \
+    apt-get install -y git && \
+    (test ! -f /ca.cer || git config --global http.sslCAInfo /ca.cer) && \
+    (test ! -f /ca.cer || pip config set global.cert /ca.cer) && \
+    pip install --prefix=/install -r /requirements.txt
 
-FROM python:3.8-slim
-
-ARG version_number
-ARG commit_sha
-
-ENV VERSION_NUMBER=$version_number
-ENV COMMIT_SHA=$commit_sha
+FROM python:3-slim
 
 COPY --from=builder /install /usr/local
-COPY CRIMAC_reportgenerator.py /app/CRIMAC_reportgenerator.py
+COPY reportgeneration /app/reportgeneration
+
+ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 WORKDIR /app
 
-CMD ["python3", "/app/CRIMAC_reportgenerator.py"]
+CMD ["python", "/app/reportgeneration/DockerMain.py"]
