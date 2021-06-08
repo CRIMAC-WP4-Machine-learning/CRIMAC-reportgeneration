@@ -17,7 +17,6 @@ class Reportgenerator:
 
     def save(self, fname):
 
-
         file_path, file_ext = os.path.splitext(fname)
         file_ext = file_ext.lower()
 
@@ -87,8 +86,8 @@ if __name__ == "__main__":
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
 
-    HOR_INTEGRATION_STEP = 10  # seconds | pings | meters | nmi
-    VER_INTEGRATION_STEP = 5  # Always in meters
+    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
+    VER_INTEGRATION_STEP = 10  # Always in meters
 
     OUTPUT_NAME = 'S2020842.xml'  # file name output (optional,  default to `out.<zarr/nc>`)
     WRITE_PNG = 'overview.png'  # No file is generated if left out
