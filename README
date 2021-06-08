@@ -46,7 +46,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
     --env HOR_INTEGRATION_TYPE=time
     
-    --env HOR_INTEGRATION_TYPE=nmi
+    --env HOR_INTEGRATION_TYPE=nmi (Not impimented)
 
     ```
 
@@ -69,15 +69,12 @@ horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or sec
 
     ```
 7. Chose the integrator
-    ```bash
+    only conservative
 
-    --env INTEGRATOR=conservation # The input data is regridded to the integration grid using energy conservative regridding
-    ```
-
-8. Select file name output (optional,  default to `out.<zarr/nc>`)
+8. Select file name output (optional, only .zarr)
 
     ```bash
-    --env OUTPUT_NAME=S2020842.xml
+    --env OUTPUT_NAME=S2020842.zarr
     ```
 
 9. Set if we want a visual overview of the integrated grid (in a PNG format image).
@@ -89,17 +86,24 @@ horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or sec
 ## Example
 
 ```bash
-(must be updated)
-docker run -it --name pyechopreprocess \
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/EK60/EK60_RAWDATA:/datain \
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/LSSS/WORK:/workin \
--v /localscratch/ibrahim-echo/out:/dataout  \
---security-opt label=disable \
---env OUTPUT_TYPE=zarr \
---env MAIN_FREQ=38000 \
---env MAX_RANGE_SRC=500 \
---env OUTPUT_NAME=S2020842 \
---env WRITE_PNG=0 \
-crimac/preprocessor
+docker run -it --name reportgenerator
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PREPROCESSED:/datain
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PRDICTIONS:/predin
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/BOTTOM:/botin
+-v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/OUT:/dataout
+--security-opt label=disable
+--env DATA_INPUT_NAME=input_filename.zarr
+--env PRED_INPUT_NAME=prediction_filename.zarr
+--env BOT_INPUT_NAME=bottom_filename.zarr
+--env OUTPUT_NAME=result.zarr
+--env WRITE_PNG=result.png
+--env THRESHOLD=0.8
+--env MAIN_FREQ = 38000
+--env MAX_RANGE_SRC = 500
+--env HOR_INTEGRATION_TYPE = ping
+--env HOR_INTEGRATION_STEP = 100
+--env VERT_INTEGRATION_TYPE=range
+--env VERT_INTEGRATION_STEP=10
+reportgenerator'
 
 ```
