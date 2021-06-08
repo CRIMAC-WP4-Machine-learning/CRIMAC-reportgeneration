@@ -9,7 +9,7 @@ with open('requirements.txt') as file:
     requirements = [line.strip() for line in file.readlines() if not line.startswith('git+')]
 
 setuptools.setup(
-    name='CRIMAC-grider',
+    name='CRIMAC-reportgeneration',
     version='0.0.1',
     description='reportgenerator in the CRIMAC project',
     long_description=long_description,
