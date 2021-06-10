@@ -12,7 +12,7 @@ from reportgeneration.EKMaskedGridder import EKMaskedGridder
 class Reportgenerator:
 
     def __init__(self,grid_fname=None, pred_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
-
+        Log().info('####### Reportgenerator ########')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
         self.has_out_file = False
@@ -26,8 +26,8 @@ class Reportgenerator:
             zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
             zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
 
-            Log.info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
-            Log.info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
+            Log().info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
+            Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
 
         self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, freq, threshold, vtype, vstep, htype, hstep, max_range)
         self.ds = None
