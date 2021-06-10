@@ -118,7 +118,7 @@ class DockerMain :
 
         grid_file_name = '{}{}{}'.format(self.datain, os.sep, self.data_input_name)
         pred_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
-        out_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
+        out_file_name = '{}{}{}'.format(self.dataout, os.sep, self.output_name)
 
         rg = Reportgenerator(
             grid_file_name,
@@ -142,6 +142,8 @@ class DockerMain :
 
 if __name__ == '__main__':
 
+    Log(loggerFileName = os.path.expanduser('/dataout'))
+
     if os.getenv('DEBUG', 'false') == 'true':
         Log().error('Press enter...')
         input()
@@ -161,7 +163,7 @@ if __name__ == '__main__':
         try:
             dm.run()
         except :
-            traceback.print_exc()
+            Log().error(traceback.format_exc())
 
         client.close()
         if os.path.exists(tmp_dir):
