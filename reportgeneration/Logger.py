@@ -75,9 +75,10 @@ class LoggerManager(Singleton):
 
         if platform.system() != 'Windows' :
             try:
-                sysHandler = logging.handlers.SysLogHandler('/dev/log')
-                sysHandler.setFormatter(formatter)
-                self.logger.addHandler(sysHandler)
+                pass
+                #sysHandler = logging.handlers.SysLogHandler('/dev/log')
+                #sysHandler.setFormatter(formatter)
+                #self.logger.addHandler(sysHandler)
             except:
                 warnings.warn('Could not log to syslog')
 
