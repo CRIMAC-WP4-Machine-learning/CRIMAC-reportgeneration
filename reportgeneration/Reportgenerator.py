@@ -113,7 +113,7 @@ if __name__ == "__main__":
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
     HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
-    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
+    HOR_INTEGRATION_STEP = 50  # seconds | pings | meters | nmi
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
     VER_INTEGRATION_STEP = 10  # Always in meters
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     grid_file_name = '{}'.format(datain + os.sep + r'zarr_gridd_sub.zarr')
     pred_file_name = '{}'.format(workin + os.sep + r'zarr_pred_sub.zarr')
     out_file_name = '{}'.format(dataout + os.sep + r'zarr_report.zarr')
-
+    Log(loggerFileName=dataout)
     rg = Reportgenerator(
         grid_file_name,
         pred_file_name,
