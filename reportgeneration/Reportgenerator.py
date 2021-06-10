@@ -11,8 +11,25 @@ from reportgeneration.EKMaskedGridder import EKMaskedGridder
 
 class Reportgenerator:
 
-    def __init__(self,data=None, pred=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
-        self.ekmg = EKMaskedGridder(data, pred, freq, threshold, vtype, vstep, htype, hstep, max_range)
+    def __init__(self,grid_fname=None, pred_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
+
+        zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
+        zarr_pred = xr.open_zarr(pred_fname)
+        self.has_out_file = False
+        # If there is a output file, start gridding after last timestamp in file
+        if out_fname is not None and os.path.exists(out_fname):
+
+            self.has_out_file = True
+            zarr_out = xr.open_zarr(out_fname)
+            start_time = zarr_out['ping_time'].values[-1]
+            stop_time = zarr_grid['ping_time'].values[-1]
+            zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
+            zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
+
+            print('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
+            print('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
+
+        self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, freq, threshold, vtype, vstep, htype, hstep, max_range)
         self.ds = None
 
     def save(self, fname):
@@ -24,10 +41,24 @@ class Reportgenerator:
         if file_ext in ['.zarr', '.png'] and self.ds is None:
             self.ds = self.ekmg.gridd()
 
+            # Assume first bin in range is nan and last bin in range do not contain data from whole bin
+            r0 = self.ds['range'].values[1]
+            r1 = self.ds['range'].values[-2]
+            self.ds = self.ds.sel(range=slice(r0, r1))
+
+            # Remove first and last bin along ping axis to remove nan and use info on whole bins only
+            p0 = self.ds['ping_time'].values[1]
+            p1 = self.ds['ping_time'].values[-2]
+            self.ds = self.ds.sel(ping_time=slice(p0, p1))
+
         if file_ext == '.zarr':
             compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
             encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
-            self.ds.to_zarr(fname, mode="w", encoding=encoding)
+            if self.has_out_file:
+                self.ds.to_zarr(fname, mode='a',append_dim='ping_time')
+            else:
+                self.ds.to_zarr(fname, mode='w', encoding=encoding)
+
         elif file_ext == '.png':
 
             vmax = -20
@@ -35,7 +66,6 @@ class Reportgenerator:
             for cat in self.ds['category']:
 
                 data = self.ds.sel(category=cat)
-
 
                 fig = plt.figure(figsize=(12, 6))
                 ax = plt.axes()
@@ -72,10 +102,10 @@ class Reportgenerator:
 if __name__ == "__main__":
 
 
-    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data'
+    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data\02'
 
     datain = baseDir  # the data directory where the preprocessed data files are located.
-    dataout = baseDir  # directory where the reports are written.
+    dataout = baseDir+r'\..'  # directory where the reports are written.
     workin = baseDir  # the directory where the zarr prediction masks are located.
     bottomin = baseDir  # the directory where the zarr bottom detection data is located (_optional_).
 
@@ -83,22 +113,22 @@ if __name__ == "__main__":
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
     HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
+    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
-
-    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
     VER_INTEGRATION_STEP = 10  # Always in meters
 
-    OUTPUT_NAME = 'S2020842.xml'  # file name output (optional,  default to `out.<zarr/nc>`)
-    WRITE_PNG = 'overview.png'  # No file is generated if left out
+    OUTPUT_NAME = 'zarr_report.zarr'  # file name output (optional,  default to `out.<zarr/nc>`)
+    WRITE_PNG = 'zarr_report.png'  # No file is generated if left out
 
-    zarr_gridd = xr.open_zarr(datain + os.sep + r'zarr_gridd_sub.zarr',
-                              chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
-    zarr_pred = xr.open_zarr(workin + os.sep + r'zarr_pred_sub.zarr')
+    grid_file_name = '{}'.format(datain + os.sep + r'zarr_gridd_sub.zarr')
+    pred_file_name = '{}'.format(workin + os.sep + r'zarr_pred_sub.zarr')
+    out_file_name = '{}'.format(dataout + os.sep + r'zarr_report.zarr')
 
     rg = Reportgenerator(
-        zarr_gridd,
-        zarr_pred,
+        grid_file_name,
+        pred_file_name,
+        out_file_name,
         MAIN_FREQ,
         THRESHOLD,
         VERT_INTEGRATION_TYPE,
@@ -108,5 +138,5 @@ if __name__ == "__main__":
         MAX_RANGE_SRC
     )
 
-    rg.save(dataout + os.sep + r'zarr_report.zarr')
-    rg.save(dataout + os.sep + r'zarr_report.png')
+    rg.save(dataout + os.sep + OUTPUT_NAME)
+    rg.save(dataout + os.sep + WRITE_PNG)
