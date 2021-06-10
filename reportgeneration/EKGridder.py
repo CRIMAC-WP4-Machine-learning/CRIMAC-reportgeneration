@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 import dask
+from Logger import Logger as Log
 from reportgeneration.XGridder import XGridder
 
 
@@ -50,7 +51,7 @@ class EKGridder(XGridder):
             sbins = data['range']
             tbins = dask.delayed(xr.DataArray(np.arange(0, data['range'][-1], step)))
         else:
-            print('{} integration type not defined'.format(_type))
+            Log().error('{} integration type not defined'.format(_type))
 
         return sbins, tbins
 

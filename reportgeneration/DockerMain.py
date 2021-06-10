@@ -1,11 +1,11 @@
 
 import os
 import traceback
-import xarray as xr
 import sys
 import shutil
 import dask
 from dask.distributed import Client
+from Logger import Logger as Log
 from reportgeneration.Reportgenerator import Reportgenerator
 
 
@@ -25,7 +25,7 @@ class DockerMain :
 
             _dir = os.path.expanduser(d)
             if not os.path.exists(_dir):
-                print('{} could not be found'.format(_dir))
+                Log().error('{} could not be found'.format(_dir))
                 return False
 
             mdirs.append(_dir)
@@ -48,46 +48,46 @@ class DockerMain :
         self.vistep = float(os.getenv('VERT_INTEGRATION_STEP', None))
 
         if self.data_input_name is None:
-            print('DATA_INPUT_NAME no set')
+            Log().error('DATA_INPUT_NAME no set')
             return False
 
         if self.pred_input_name is None:
-            print('PRED_INPUT_NAME no set')
+            Log().error('PRED_INPUT_NAME no set')
             return False
 
         if self.bot_input_name is not None:
-            print('BOT_INPUT_NAME. Masking with bottom data not implemented. Continu without bottom data')
+            Log().error('BOT_INPUT_NAME. Masking with bottom data not implemented. Continu without bottom data')
 
         if self.output_name is None:
-            print('OUTPUT_NAME no set')
+            Log().error('OUTPUT_NAME no set')
             return False
 
         if self.threshold is None:
-            print('THRESHOLD no set')
+            Log().error('THRESHOLD no set')
             return False
 
         if not isinstance(self.threshold, float):
-            print('THRESHOLD needs to be float, got {}'.format(type(self.threshold)))
+            Log().error('THRESHOLD needs to be float, got {}'.format(type(self.threshold)))
             return False
 
         if self.threshold<0 or self.threshold>1:
-            print('THRESHOLD needs to be float [0,1], got {}'.format(self.threshold))
+            Log().error('THRESHOLD needs to be float [0,1], got {}'.format(self.threshold))
             return False
 
         if self.hitype is None or self.hitype not in ['ping', 'time']:
-            print('HOR_INTEGRATION_TYPE no set, valid values : ping | time')
+            Log().error('HOR_INTEGRATION_TYPE no set, valid values : ping | time')
             return False
 
         if self.histep is None or not isinstance(self.histep,(float, int)):
-            print('HOR_INTEGRATION_STEP no set correctly')
+            Log().error('HOR_INTEGRATION_STEP no set correctly')
             return False
 
         if self.vitype is None:
-            print('VERT_INTEGRATION_TYPE no set')
+            Log().error('VERT_INTEGRATION_TYPE no set')
             return False
 
         if self.vistep is None or not isinstance(self.histep, (float, int)):
-            print('VERT_INTEGRATION_STEP no set correctly set')
+            Log().error('VERT_INTEGRATION_STEP no set correctly set')
             return False
 
         return True
@@ -116,12 +116,14 @@ class DockerMain :
 
     def run(self):
 
-        zarr_gridd = xr.open_zarr('{}{}{}'.format(self.datain, os.sep, self.data_input_name), chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
-        zarr_pred = xr.open_zarr('{}{}{}'.format(self.predin, os.sep, self.pred_input_name))
+        grid_file_name = '{}{}{}'.format(self.datain, os.sep, self.data_input_name)
+        pred_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
+        out_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
 
         rg = Reportgenerator(
-            zarr_gridd,
-            zarr_pred,
+            grid_file_name,
+            pred_file_name,
+            out_file_name,
             self.main_freq,
             self.threshold,
             self.vitype,
@@ -141,7 +143,7 @@ class DockerMain :
 if __name__ == '__main__':
 
     if os.getenv('DEBUG', 'false') == 'true':
-        print('Press enter...')
+        Log().error('Press enter...')
         input()
         sys.exit(0)
 
@@ -154,7 +156,7 @@ if __name__ == '__main__':
 
         dask.config.set({'temporary_directory': tmp_dir})
         client = Client()
-        print(client)
+        Log().error(client)
 
         try:
             dm.run()
@@ -166,7 +168,7 @@ if __name__ == '__main__':
             shutil.rmtree(tmp_dir)
 
     else :
-        print('Error occurred, exiting')
-        print('Usage :/n{}'.format(dm.usage()))
+        Log().error('Error occurred, exiting')
+        Log().error('Usage :/n{}'.format(dm.usage()))
 
     sys.exit(0)

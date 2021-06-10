@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
-
+from Logger import Logger as Log
 from reportgeneration.EKMaskedGridder import EKMaskedGridder
 
 
@@ -26,8 +26,8 @@ class Reportgenerator:
             zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
             zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
 
-            print('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
-            print('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
+            Log.info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
+            Log.info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
 
         self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, freq, threshold, vtype, vstep, htype, hstep, max_range)
         self.ds = None
@@ -96,7 +96,7 @@ class Reportgenerator:
                 plt.savefig('{}_{}.png'.format(file_path, cat.values))
 
         else:
-            print('{} format not supported'.format(fname[-4:]))
+            Log().error('{} format not supported'.format(fname[-4:]))
 
 
 if __name__ == "__main__":
