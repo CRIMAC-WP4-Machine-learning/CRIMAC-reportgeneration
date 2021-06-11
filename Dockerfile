@@ -14,6 +14,12 @@ RUN apt-get update -y && \
 
 FROM python:3.8-slim
 
+ARG version_number
+ARG commit_sha
+
+ENV VERSION_NUMBER=$version_number
+ENV COMMIT_SHA=$commit_sha
+
 COPY --from=builder /install /usr/local
 COPY reportgeneration /app/reportgeneration
 
