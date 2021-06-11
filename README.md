@@ -104,6 +104,6 @@ docker run -it --name reportgenerator
 --env HOR_INTEGRATION_STEP = 100
 --env VERT_INTEGRATION_TYPE=range
 --env VERT_INTEGRATION_STEP=10
-reportgenerator'
+reportgenerator
 
 ```
