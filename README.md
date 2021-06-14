@@ -46,7 +46,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
     --env HOR_INTEGRATION_TYPE=time
     
-    --env HOR_INTEGRATION_TYPE=nmi (Not impimented)
+    --env HOR_INTEGRATION_TYPE=nmi (Not implemented)
 
     ```
 
