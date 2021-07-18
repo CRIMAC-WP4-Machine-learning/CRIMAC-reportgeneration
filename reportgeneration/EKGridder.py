@@ -47,6 +47,37 @@ class EKGridder(XGridder):
                 )
             )
 
+        elif _type == 'distance':
+            sbins = data['distance']
+            tbins = dask.delayed(xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step)))
+
+            sec = self.calckTimeInSeconds(data['ping_time'])
+            isec = np.interp(tbins.compute().values, sbins.values, sec)
+            mtime = [data['ping_time'].values[0]+np.timedelta64(int(np.round(t*1000)), 'ms') for t in isec]
+
+            self.ping_time = dask.delayed(
+                xr.DataArray(mtime)
+                )
+
+            """
+            import matplotlib.pyplot as plt
+
+            tbins = tbins.compute()
+            plt.figure()
+            plt.plot(sbins, sbins, '.r')
+            plt.plot(tbins, tbins, '.b')
+            plt.xlabel('distance')
+            plt.ylabel('distance')
+
+            plt.figure()
+            plt.plot(data['ping_time'].values, data['ping_time'].values, '.r')
+            plt.plot(self.ping_time.values, self.ping_time.values, '.b')
+            plt.xlabel('time')
+            plt.ylabel('time')
+
+            print()
+            """
+
         elif _type == 'range':
             sbins = data['range']
             tbins = dask.delayed(xr.DataArray(np.arange(0, data['range'][-1], step)))
@@ -70,7 +101,7 @@ class EKGridder(XGridder):
         if data is None:
             data = self.data
 
-        sv_s = data['sv'].fillna(0).squeeze()
+        sv_s = data.fillna(0).squeeze()
 
         gdata = super().regrid(sv_s)
 
