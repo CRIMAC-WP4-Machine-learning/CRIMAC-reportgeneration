@@ -16,7 +16,7 @@ class Reportgenerator:
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
         self.has_out_file = False
-        # If there is a output file, start gridding after last timestamp in file
+        # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
 
             self.has_out_file = True
@@ -75,7 +75,7 @@ class Reportgenerator:
                 x_lims = mdates.date2num(data['ping_time'].values)
                 extent = [x_lims[0], x_lims[-1].astype(float), data['range'].values[-1], data['range'].values[0]]
 
-                im = plt.gca().imshow(10 * np.log10(data.transpose()['sv'].values + 10e-90), vmin=vmin,vmax=vmax, extent=extent,origin='upper')
+                im = plt.gca().imshow(10 * np.log10(data.transpose()['sv'].values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 
                 plt.ylabel('Sv {}(m)'.format(self.ekmg.vtype))
 
@@ -102,7 +102,7 @@ class Reportgenerator:
 if __name__ == "__main__":
 
 
-    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data\02'
+    baseDir = r'Z:\Dev\Data\CRIMAC\Data\03Subset\03'
 
     datain = baseDir  # the data directory where the preprocessed data files are located.
     dataout = baseDir+r'\..'  # directory where the reports are written.
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
     HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
-    HOR_INTEGRATION_STEP = 50  # seconds | pings | meters | nmi
+    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
     VER_INTEGRATION_STEP = 10  # Always in meters
