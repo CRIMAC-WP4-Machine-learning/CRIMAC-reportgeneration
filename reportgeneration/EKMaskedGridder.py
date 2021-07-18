@@ -30,7 +30,9 @@ class EKMaskedGridder:
 
     def maskAndRegrid(self, data, mask, cat, FREQ, THR, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range):
         catMask = mask > THR
-        masked_sv = data.sel(frequency=FREQ) * catMask.T
+        masked_sv = data.sel(frequency=FREQ).sv * catMask.transpose(transpose_coords=False)
+
+        masked_sv = masked_sv.assign_coords(distance=data.distance)
 
         rg = EKGridder(masked_sv, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range).regrid()
         rg = rg.assign_attrs(category=cat)
@@ -67,7 +69,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import os
 
-    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data'
+    baseDir = r'Z:\Dev\Data\CRIMAC\Data\03Subset\01'
 
     datain = baseDir  # the data directory where the preprocessed data files are located.
     dataout = baseDir  # directory where the reports are written.
