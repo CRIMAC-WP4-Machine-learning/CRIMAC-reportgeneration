@@ -11,10 +11,11 @@ from reportgeneration.EKMaskedGridder import EKMaskedGridder
 
 class Reportgenerator:
 
-    def __init__(self,grid_fname=None, pred_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
+    def __init__(self,grid_fname=None, pred_fname=None,bot_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
         Log().info('####### Reportgenerator ########')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
+        zarr_bot = xr.open_zarr(bot_fname)
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
@@ -25,11 +26,12 @@ class Reportgenerator:
             stop_time = zarr_grid['ping_time'].values[-1]
             zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
             zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
+            zarr_bot = zarr_bot.sel(ping_time=slice(start_time, stop_time))
 
             Log().info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
             Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
 
-        self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, freq, threshold, vtype, vstep, htype, hstep, max_range)
+        self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, zarr_bot, freq, threshold, vtype, vstep, htype, hstep, max_range)
         self.ds = None
 
     def save(self, fname):
@@ -47,9 +49,12 @@ class Reportgenerator:
             self.ds = self.ds.sel(range=slice(r0, r1))
 
             # Remove first and last bin along ping axis to remove nan and use info on whole bins only
-            p0 = self.ds['ping_time'].values[1]
-            p1 = self.ds['ping_time'].values[-2]
-            self.ds = self.ds.sel(ping_time=slice(p0, p1))
+            #p0 = self.ds['ping_time'].values[1]
+            #p1 = self.ds['ping_time'].values[-2]
+            #self.ds = self.ds.sel(ping_time=slice(p0, p1))
+
+            self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time'])-1))
+
 
         if file_ext == '.zarr':
             compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
@@ -102,7 +107,8 @@ class Reportgenerator:
 if __name__ == "__main__":
 
 
-    baseDir = r'Z:\Dev\Data\CRIMAC\Data\03Subset\03'
+    #baseDir = r'Z:\Dev\Data\CRIMAC\Data\03Subset\raw\01'
+    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data\03Subset\raw\03'
 
     datain = baseDir  # the data directory where the preprocessed data files are located.
     dataout = baseDir+r'\..'  # directory where the reports are written.
@@ -112,22 +118,24 @@ if __name__ == "__main__":
     MAIN_FREQ = 38000
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
-    HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
-    HOR_INTEGRATION_STEP = 100  # seconds | pings | meters | nmi
+    HOR_INTEGRATION_TYPE = 'distance' # 'ping' | 'time' | 'distance'
+    HOR_INTEGRATION_STEP = 0.05  # seconds | pings | meters | nmi
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
-    VER_INTEGRATION_STEP = 10  # Always in meters
+    VER_INTEGRATION_STEP = 5  # Always in meters
 
     OUTPUT_NAME = 'zarr_report.zarr'  # file name output (optional,  default to `out.<zarr/nc>`)
     WRITE_PNG = 'zarr_report.png'  # No file is generated if left out
 
     grid_file_name = '{}'.format(datain + os.sep + r'zarr_gridd_sub.zarr')
     pred_file_name = '{}'.format(workin + os.sep + r'zarr_pred_sub.zarr')
+    bot_file_name = '{}'.format(workin + os.sep + r'zarr_bot_sub.zarr')
     out_file_name = '{}'.format(dataout + os.sep + r'zarr_report.zarr')
     Log(loggerFileName=dataout)
     rg = Reportgenerator(
         grid_file_name,
         pred_file_name,
+        bot_file_name,
         out_file_name,
         MAIN_FREQ,
         THRESHOLD,
