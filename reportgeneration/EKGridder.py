@@ -11,6 +11,7 @@ from reportgeneration.XGridder import XGridder
 class EKGridder(XGridder):
     def __init__(self, data, v_integration_type='range', v_step=50, h_integration_type='ping', h_step=10, max_range=500):
         self.ping_time = None
+        self.distance = None
 
         # Limit range according to max_range
         data = data.sel(range=slice(0, max_range))
@@ -18,7 +19,7 @@ class EKGridder(XGridder):
         source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step)
         source_h_bins, target_h_bins = self.calckBins(data, h_integration_type, h_step)
         super().__init__(target_v_bins,source_v_bins, target_h_bins, source_h_bins)
-
+        self.h_integration_type = h_integration_type
         self.data = data
         self.max_range = max_range
 
@@ -30,23 +31,36 @@ class EKGridder(XGridder):
         if _type == 'ping':
             sbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']))))
             tbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']), step)))
-
-            self.ping_time = dask.delayed(
-                xr.DataArray(
+            self.ping_time = data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
+            #self.distance = data['distance'].values
+            """
+            self.ping_time = xr.DataArray(
                     data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
                 )
-            )
+
+            self.distance = xr.DataArray(
+                    data['distance'].sel(ping_time=self.ping_time)
+                )
+            """
 
         elif _type == 'time':
             sbins = dask.delayed(self.calckTimeInSeconds)(data['ping_time'])
             tbins = dask.delayed(xr.DataArray(np.arange(0, sbins[-1].compute(), step)))
-
+            self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
+            """
             self.ping_time = dask.delayed(
                 xr.DataArray(
                     np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
                 )
             )
-
+            """
+            """
+            self.distance = dask.delayed(
+                xr.DataArray(
+                    data['distance'].interp(ping_time=self.ping_time)
+                )
+            )
+            """
         elif _type == 'distance':
             sbins = data['distance']
             tbins = dask.delayed(xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step)))
@@ -54,10 +68,19 @@ class EKGridder(XGridder):
             sec = self.calckTimeInSeconds(data['ping_time'])
             isec = np.interp(tbins.compute().values, sbins.values, sec)
             mtime = [data['ping_time'].values[0]+np.timedelta64(int(np.round(t*1000)), 'ms') for t in isec]
-
+            self.ping_time = np.array(mtime)
+            """
             self.ping_time = dask.delayed(
                 xr.DataArray(mtime)
                 )
+
+        
+            self.distance = dask.delayed(
+                xr.DataArray(
+                    data['distance'].interp(ping_time=self.ping_time)
+                )
+            )
+            """
 
             """
             import matplotlib.pyplot as plt
@@ -103,14 +126,21 @@ class EKGridder(XGridder):
 
         sv_s = data.fillna(0).squeeze()
 
-        gdata = super().regrid(sv_s)
+        gdata = super().regrid(sv_s['sv'].values)
+
+        data = data.sel(range=slice(0, 0))  # We dont ned values in range anymore
+        data = data.interp(ping_time=self.ping_time)
 
         ds = xr.Dataset(
-            data_vars = dict(sv=(['ping_time', 'range'], gdata)),
+            data_vars=dict(sv=(['ping_time', 'range'], gdata)),
             coords=dict(
-                frequency = data['frequency'],
-                range = self.target_v_bins.compute().values,
-                ping_time = self.ping_time.compute().values
+                frequency=data['frequency'],
+                range=self.target_v_bins.compute().values,
+                ping_time=data['ping_time'].values,
+                distance= ('ping_time',data['distance'].values),
+                latitude= ('ping_time',data['latitude'].values),
+                longitude= ('ping_time',data['longitude'].values),
+                channel_id= data['channel_id'].values
             )
         )
 
@@ -132,7 +162,7 @@ if __name__ == "__main__":
     MAIN_FREQ = 38000
     MAX_RANGE_SRC = 100
     THRESHOLD = 0.2  # threshold for the classes
-    HOR_INTEGRATION_TYPE = 'ping' # 'ping' | 'time' | 'distance'
+    HOR_INTEGRATION_TYPE = 'time' # 'ping' | 'time' | 'distance'
 
     VERT_INTEGRATION_TYPE = 'range' # 'depth'
 
