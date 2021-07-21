@@ -9,13 +9,14 @@ from reportgeneration.EKGridder import EKGridder
     Gridds on one frequency over all categories    
 """
 class EKMaskedGridder:
-    def __init__(self,data=None, pred=None,freq=38000, threshold=0.5,vtype='range',vstep=50,htype='ping',hstep=50, max_range=500):
+    def __init__(self,data=None, pred=None,bot=None,freq=38000, threshold=0.5,vtype='range',vstep=50,htype='ping',hstep=50, max_range=500):
         self.worker_data = []
         self.vtype = vtype
         for cat in list(pred.data_vars.keys()):
             result = dask.delayed(self.maskAndRegrid)(
                 data,
                 pred[cat],
+                bot,
                 cat,
                 freq,
                 threshold,
@@ -28,9 +29,25 @@ class EKMaskedGridder:
 
             self.worker_data.append(result)
 
-    def maskAndRegrid(self, data, mask, cat, FREQ, THR, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range):
-        catMask = mask > THR
-        masked_sv = data.sel(frequency=FREQ).sv * catMask.transpose(transpose_coords=False)
+    def maskAndRegrid(self, data, mask,bot, cat, FREQ, THR, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range):
+
+        data = data.sel(frequency=FREQ)
+
+        # Threashold prediction mask
+        mask = mask.where(mask > THR, 0)
+        mask = mask.where(mask < THR, 1)
+        mask = mask.transpose('ping_time','range')
+        #import matplotlib.pylab as plt
+        #plt.imshow(mask.values.astype(float))
+        #plt.show()
+        # Bottom predictions give 1 for bottom and below and nan for all other.
+        # We are interested in all other, do some swapping to make a mask
+        # 1 -> 0
+        # nan -> 1
+        bot = bot.where(bot != 1, 0)
+        bot = bot.where(bot == 0, 1)
+        #bot = bot.where(bot == 0, 1)
+        masked_sv = data * mask * bot['bottom_range']
 
         masked_sv = masked_sv.assign_coords(distance=data.distance)
 
@@ -43,17 +60,34 @@ class EKMaskedGridder:
         svcat = []
         categories = []
         for elm in xlist:
-            svcat.append(elm['sv'])
+            svcat.append(elm['sv'].values)
             categories.append(elm.attrs['category'])
 
+        """
         ds = xr.Dataset(
             data_vars=dict(sv=(['category', 'ping_time', 'range'], svcat)),
             coords=dict(
                 category=categories,
                 range=xlist[0]['range'],
-                ping_time=xlist[0]['ping_time']
+                ping_time=xlist[0]['ping_time'],
+                distance=xlist[0]['distance'],
+                latitude=xlist[0]['latitude'],
+                longitude=xlist[0]['longitude']
             )
         )
+        """
+        ds = xr.Dataset(
+            {'sv' : (['category', 'ping_time', 'range'], np.array(svcat))},
+            coords={
+                'category' : categories,
+                'range' : xlist[0]['range'].values,
+                'ping_time' : xlist[0]['ping_time'].values,
+                'distance' :  ('ping_time', xlist[0]['distance'].values),
+                'latitude': ('ping_time', xlist[0]['latitude'].values),
+                'longitude': ('ping_time', xlist[0]['longitude'].values),
+                'channel_id' : xlist[0]['channel_id'].values
+            }
+         )
 
         return ds
 
