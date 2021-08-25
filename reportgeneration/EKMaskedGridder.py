@@ -44,10 +44,12 @@ class EKMaskedGridder:
         # We are interested in all other, do some swapping to make a mask
         # 1 -> 0
         # nan -> 1
-        bot = bot.where(bot != 1, 0)
-        bot = bot.where(bot == 0, 1)
-        #bot = bot.where(bot == 0, 1)
-        masked_sv = data * mask * bot['bottom_range']
+        if bot is None:
+            masked_sv = data * mask
+        else:
+            bot = bot.where(bot != 1, 0)
+            bot = bot.where(bot == 0, 1)
+            masked_sv = data * mask * bot['bottom_range']
 
         masked_sv = masked_sv.assign_coords(distance=data.distance)
 
