@@ -15,7 +15,10 @@ class Reportgenerator:
         Log().info('####### Reportgenerator ########')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
-        zarr_bot = xr.open_zarr(bot_fname)
+        if bot_fname is None:
+            zarr_bot = None
+        else:
+            zarr_bot = xr.open_zarr(bot_fname)
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
