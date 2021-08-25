@@ -117,12 +117,14 @@ class DockerMain :
     def run(self):
 
         grid_file_name = '{}{}{}'.format(self.datain, os.sep, self.data_input_name)
+        bot_file_name = '{}{}{}'.format(self.dataout, os.sep, self.bot_input_name)
         pred_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
         out_file_name = '{}{}{}'.format(self.dataout, os.sep, self.output_name)
 
         rg = Reportgenerator(
             grid_file_name,
             pred_file_name,
+            bot_file_name,
             out_file_name,
             self.main_freq,
             self.threshold,
