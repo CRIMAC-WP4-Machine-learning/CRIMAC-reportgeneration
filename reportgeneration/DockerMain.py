@@ -55,9 +55,6 @@ class DockerMain :
             Log().error('PRED_INPUT_NAME no set')
             return False
 
-        if self.bot_input_name is not None:
-            Log().error('BOT_INPUT_NAME. Masking with bottom data not implemented. Continu without bottom data')
-
         if self.output_name is None:
             Log().error('OUTPUT_NAME no set')
             return False
