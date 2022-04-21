@@ -98,10 +98,10 @@ docker run -it --name reportgenerator
 --env OUTPUT_NAME=result.zarr
 --env WRITE_PNG=result.png
 --env THRESHOLD=0.8
---env MAIN_FREQ = 38000
---env MAX_RANGE_SRC = 500
---env HOR_INTEGRATION_TYPE = ping
---env HOR_INTEGRATION_STEP = 100
+--env MAIN_FREQ=38000
+--env MAX_RANGE_SRC=500
+--env HOR_INTEGRATION_TYPE=ping
+--env HOR_INTEGRATION_STEP=100
 --env VERT_INTEGRATION_TYPE=range
 --env VERT_INTEGRATION_STEP=10
 reportgenerator
