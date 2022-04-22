@@ -112,17 +112,18 @@ class DockerMain :
             reportgenerator'
 
     def run(self):
-
+        Log().info('1.1')
         grid_file_name = '{}{}{}'.format(self.datain, os.sep, self.data_input_name)
-
+        Log().info('1.2')
         if self.bot_input_name is None:
             bot_file_name = None
         else:
             bot_file_name = '{}{}{}'.format(self.bottomin, os.sep, self.bot_input_name)
-
+        Log().info('1.3')
         pred_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
+        Log().info('1.4')
         out_file_name = '{}{}{}'.format(self.dataout, os.sep, self.output_name)
-
+        Log().info('1.5')
         rg = Reportgenerator(
             grid_file_name,
             pred_file_name,
@@ -136,12 +137,12 @@ class DockerMain :
             self.histep,
             self.max_range
         )
-
+        Log().info('1.6')
         rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
-
+        Log().info('1.7')
         if self.write_png is not None:
             rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
-
+        Log().info('1.8')
 
 
 if __name__ == '__main__':
@@ -165,7 +166,9 @@ if __name__ == '__main__':
         Log().info(client)
 
         try:
+            Log().info('1')
             dm.run()
+            Log().info('2')
         except :
             Log().error(traceback.format_exc())
 
