@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
         dask.config.set({'temporary_directory': tmp_dir})
         client = Client()
-        Log().error(client)
+        Log().info(client)
 
         try:
             dm.run()
