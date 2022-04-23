@@ -2,6 +2,7 @@ import dask
 import xarray as xr
 import numpy as np
 from reportgeneration.EKGridder import EKGridder
+from dask.diagnostics import ProgressBar
 
 
 """
@@ -95,7 +96,9 @@ class EKMaskedGridder:
 
     def gridd(self):
         ready = dask.delayed(self.to_xarray)(self.worker_data)
-        allData = ready.compute(scheduler='threads')
+        with ProgressBar():
+            allData = ready.compute(scheduler='threads')
+            
         return allData
 
 
