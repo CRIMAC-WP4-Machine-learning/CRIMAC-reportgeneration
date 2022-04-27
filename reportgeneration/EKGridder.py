@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-import dask
+# import dask
 from Logger import Logger as Log
 from reportgeneration.XGridder import XGridder
 
@@ -29,8 +29,8 @@ class EKGridder(XGridder):
         sbins = None
         tbins = None
         if _type == 'ping':
-            sbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']))))
-            tbins = dask.delayed(xr.DataArray(np.arange(0, len(data['ping_time']), step)))
+            sbins = xr.DataArray(np.arange(0, len(data['ping_time'])))
+            tbins = xr.DataArray(np.arange(0, len(data['ping_time']), step))
             self.ping_time = data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
             #self.distance = data['distance'].values
             """
@@ -44,8 +44,8 @@ class EKGridder(XGridder):
             """
 
         elif _type == 'time':
-            sbins = dask.delayed(self.calckTimeInSeconds)(data['ping_time'])
-            tbins = dask.delayed(xr.DataArray(np.arange(0, sbins[-1].compute(), step)))
+            sbins = self.calckTimeInSeconds(data['ping_time'])
+            tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
             self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
             """
             self.ping_time = dask.delayed(
@@ -63,7 +63,7 @@ class EKGridder(XGridder):
             """
         elif _type == 'distance':
             sbins = data['distance']
-            tbins = dask.delayed(xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step)))
+            tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
 
             sec = self.calckTimeInSeconds(data['ping_time'])
             isec = np.interp(tbins.compute().values, sbins.values, sec)
@@ -103,7 +103,7 @@ class EKGridder(XGridder):
 
         elif _type == 'range':
             sbins = data['range']
-            tbins = dask.delayed(xr.DataArray(np.arange(0, data['range'][-1], step)))
+            tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
         else:
             Log().error('{} integration type not defined'.format(_type))
 
