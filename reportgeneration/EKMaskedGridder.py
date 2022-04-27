@@ -3,7 +3,7 @@ import xarray as xr
 import numpy as np
 from reportgeneration.EKGridder import EKGridder
 from dask.diagnostics import ProgressBar
-
+import pdb
 
 """
     Lossless gridding masked with predictions on EKdata from gridder and prediction from predictor
@@ -13,10 +13,12 @@ class EKMaskedGridder:
     def __init__(self,data=None, pred=None,bot=None,freq=38000, threshold=0.5,vtype='range',vstep=50,htype='ping',hstep=50, max_range=500):
         self.worker_data = []
         self.vtype = vtype
-        for cat in list(pred.data_vars.keys()):
-            result = dask.delayed(self.maskAndRegrid)(
+        # Ruben: Check the diff on this part:
+        for cat in pred["annotation"]["category"]:
+            #pdb.set_trace()
+            result = self.maskAndRegrid(
                 data,
-                pred[cat],
+                pred["annotation"]["category"==cat.values],
                 bot,
                 cat,
                 freq,
@@ -95,9 +97,10 @@ class EKMaskedGridder:
         return ds
 
     def gridd(self):
-        ready = dask.delayed(self.to_xarray)(self.worker_data)
-        with ProgressBar():
-            allData = ready.compute(scheduler='threads')
+        #ready = dask.delayed(self.to_xarray)(self.worker_data)
+        #with ProgressBar():
+        #    allData = ready.compute(scheduler='threads')
+        allData = self.to_xarray(self.worker_data)
             
         return allData
 
