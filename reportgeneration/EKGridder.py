@@ -61,7 +61,9 @@ class EKGridder(XGridder):
                 )
             )
             """
-        elif _type == 'distance':
+        elif _type == 'nmi':
+            Log().error('nmi as distance is not implimented')
+            """
             sbins = data['distance']
             tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
 
@@ -69,6 +71,7 @@ class EKGridder(XGridder):
             isec = np.interp(tbins.compute().values, sbins.values, sec)
             mtime = [data['ping_time'].values[0]+np.timedelta64(int(np.round(t*1000)), 'ms') for t in isec]
             self.ping_time = np.array(mtime)
+            """
             """
             self.ping_time = dask.delayed(
                 xr.DataArray(mtime)
@@ -104,6 +107,8 @@ class EKGridder(XGridder):
         elif _type == 'range':
             sbins = data['range']
             tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
+        elif _type == 'depth':
+            Log().error('depth as vertical integrator binning not implemented')
         else:
             Log().error('{} integration type not defined'.format(_type))
 

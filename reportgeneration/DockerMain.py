@@ -71,20 +71,31 @@ class DockerMain :
             Log().error('THRESHOLD needs to be float [0,1], got {}'.format(self.threshold))
             return False
 
-        if self.hitype is None or self.hitype not in ['ping', 'time']:
-            Log().error('HOR_INTEGRATION_TYPE no set, valid values : ping | time')
+        valid_hitype = ['ping', 'time','nmi']
+        if self.hitype is None or self.hitype not in ['ping', 'time','nmi']:
+            Log().error(f'HOR_INTEGRATION_TYPE no set or incorrect')
+            Log().info(f'Types set to {self.hitype}')
+            Log().info(f'Valied types : {valid_hitype}')
+
             return False
 
         if self.histep is None or not isinstance(self.histep,(float, int)):
             Log().error('HOR_INTEGRATION_STEP no set correctly')
+            Log().info(f'Types set to {self.histep}')
+            Log().info('Type must be float or int')
             return False
 
-        if self.vitype is None:
-            Log().error('VERT_INTEGRATION_TYPE no set')
+        valied_vitypes = ['range', 'depth']
+        if self.vitype is None or self.hitype not in valied_vitypes:
+            Log().error(f'VERT_INTEGRATION_TYPE no set or incorrect')
+            Log().info(f'Types set to {self.vitype}')
+            Log().info(f'Valied types : {valied_vitypes}')
             return False
 
         if self.vistep is None or not isinstance(self.histep, (float, int)):
             Log().error('VERT_INTEGRATION_STEP no set correctly set')
+            Log().info(f'Types set to {self.vistep}')
+            Log().info('Type mist be float or int')
             return False
 
         return True
