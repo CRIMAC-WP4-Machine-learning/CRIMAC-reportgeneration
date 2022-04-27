@@ -116,9 +116,9 @@ class DockerMain :
             --env THRESHOLD=0.8\n \
             --env MAIN_FREQ = 38000\n \
             --env MAX_RANGE_SRC = 500\n \
-            --env HOR_INTEGRATION_TYPE = ping [ping | time | nmi]\n  \
+            --env HOR_INTEGRATION_TYPE =  [ping | time | nmi]\n  \
             --env HOR_INTEGRATION_STEP = 100\n \
-            --env VERT_INTEGRATION_TYPE=range\n \
+            --env VERT_INTEGRATION_TYPE=[range | nmi]\n \
             --env VERT_INTEGRATION_STEP=10\n \
             reportgenerator'
 
