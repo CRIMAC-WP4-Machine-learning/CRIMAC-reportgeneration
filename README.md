@@ -86,18 +86,22 @@ horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or sec
 ## Example
 
 ```bash
+export SURVEY='S2019847'
+export SURVEYDIR='/localscratch_hdd/crimac/2019/S2019847'
+export TMPSURVEY='/localscratch_hdd/nilsolav/2019/S2019847'
+
 docker pull crimac/reportgeneration
 docker run -it --name reportgenerator
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PREPROCESSED:/datain
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PRDICTIONS:/predin
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/BOTTOM:/botin
--v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/OUT:/dataout
+-v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain
+-v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin
+-v "$SURVEYDIR/ACOUSTIC/GRIDDED":/botin
+-v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout
 --security-opt label=disable
---env DATA_INPUT_NAME=input_filename.zarr
---env PRED_INPUT_NAME=prediction_filename.zarr
---env BOT_INPUT_NAME=bottom_filename.zarr
---env OUTPUT_NAME=result.zarr
---env WRITE_PNG=result.png
+--env DATA_INPUT_NAME="${SURVEY}_sv.zarr"
+--env PRED_INPUT_NAME="{$SURVEY}_labels.zarr"
+--env BOT_INPUT_NAME="{$SURVEY}_bottom.zarr"
+--env OUTPUT_NAME="${SURVEY}_report_0.zarr"
+--env WRITE_PNG=${SURVEY}_report_0.png"
 --env THRESHOLD=0.8
 --env MAIN_FREQ=38000
 --env MAX_RANGE_SRC=500
