@@ -101,7 +101,7 @@ docker run -it --name reportgenerator
 --env PRED_INPUT_NAME="{$SURVEY}_labels.zarr"
 --env BOT_INPUT_NAME="{$SURVEY}_bottom.zarr"
 --env OUTPUT_NAME="${SURVEY}_report_0.zarr"
---env WRITE_PNG=${SURVEY}_report_0.png"
+--env WRITE_PNG="${SURVEY}_report_0.png"
 --env THRESHOLD=0.8
 --env MAIN_FREQ=38000
 --env MAX_RANGE_SRC=500
