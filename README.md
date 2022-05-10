@@ -22,7 +22,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 2. Processing and re-gridding the channels are done in parallel (using `Dask`’s delayed).
 3. Automatic resuming from the last `ping_time` if the output file exists.
 4. Batch processing is done by appending directly to the output file, should be memory efficient.
-5. The image of this repository is available at Docker Hub (https://hub.docker.com/r/crimac/xxx).
+5. The image of this repository is available at Docker Hub (https://hub.docker.com/r/crimac/reportgeneration).
 
 ## Options to run
 
