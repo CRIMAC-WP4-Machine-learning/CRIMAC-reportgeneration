@@ -98,8 +98,8 @@ docker run -it --name reportgenerator
 -v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout
 --security-opt label=disable
 --env DATA_INPUT_NAME="${SURVEY}_sv.zarr"
---env PRED_INPUT_NAME="{$SURVEY}_labels.zarr"
---env BOT_INPUT_NAME="{$SURVEY}_bottom.zarr"
+--env PRED_INPUT_NAME="${SURVEY}_labels.zarr"
+--env BOT_INPUT_NAME="${SURVEY}_bottom.zarr"
 --env OUTPUT_NAME="${SURVEY}_report_0.zarr"
 --env WRITE_PNG="${SURVEY}_report_0.png"
 --env THRESHOLD=0.8
