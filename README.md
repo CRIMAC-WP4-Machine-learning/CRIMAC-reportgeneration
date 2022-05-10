@@ -112,3 +112,7 @@ docker run -it --name reportgenerator
 reportgenerator
 
 ```
+
+```bash
+docker run -it --name reportgenerator -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/botin -v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout --security-opt label=disable --env DATA_INPUT_NAME="${SURVEY}_sv.zarr" --env PRED_INPUT_NAME="${SURVEY}_labels.zarr" --env BOT_INPUT_NAME="${SURVEY}_bottom.zarr" --env OUTPUT_NAME="${SURVEY}_report_0.zarr" --env WRITE_PNG="${SURVEY}_report_0.png" --env THRESHOLD=0.8 --env MAIN_FREQ=38000 --env MAX_RANGE_SRC=500 --env HOR_INTEGRATION_TYPE=ping --env HOR_INTEGRATION_STEP=100 --env VERT_INTEGRATION_TYPE=range --env VERT_INTEGRATION_STEP=10 reportgenerator
+```
