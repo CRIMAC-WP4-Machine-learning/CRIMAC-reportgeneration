@@ -86,6 +86,7 @@ horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or sec
 ## Example
 
 ```bash
+docker pull crimac/reportgeneration
 docker run -it --name reportgenerator
 -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PREPROCESSED:/datain
 -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PRDICTIONS:/predin
