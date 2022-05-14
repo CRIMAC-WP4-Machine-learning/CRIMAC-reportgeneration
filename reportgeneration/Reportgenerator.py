@@ -105,49 +105,54 @@ class Reportgenerator:
 
         else:
             Log().error('{} format not supported'.format(fname[-4:]))
-
+"""
+python Reportgenerator.py \
+    --data S2019847_0511_sv.zarr
+    --pred S2019847_0511_labels.zarr
+    --bot S2019847_0511_bottom.zarr
+    --out S2019847_0511_report.zarr
+    --img S2019847_0511_report.png
+    --thr 0.8
+    --freq 38000
+    --range 500
+    --htype ping
+    --hstep 100
+    --vtype range
+    --vstep 10
+"""
 
 if __name__ == "__main__":
+    import argparse
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, help="Acoustic Sv data")
+    parser.add_argument("--pred", type=str, help="Predictions")
+    parser.add_argument("--bot", type=str, help="Bottom data")
+    parser.add_argument("--out", type=str, help="Out data file")
+    parser.add_argument("--img", type=str, help="Save image file")
+    parser.add_argument("--thr", type=float, help="Threshold for predictions")
+    parser.add_argument("--freq", type=float, help="Frequency to gridd")
+    parser.add_argument("--range", type=float, help="Range to integrate over (m)")
+    parser.add_argument("--htype", type=str,choices=['ping', 'time' , 'distance'], help="Type of horizontal integration")
+    parser.add_argument("--hstep", type=float, help="Step unit for horizontal integration : #pings | seconds | nautical miles)")
+    parser.add_argument("--vtype", type=str, choices=['range', 'depth'], help="Type of vertical integration")
+    parser.add_argument("--vstep", type=float,help="Step unit for horizontal integration : meters")
 
-    #baseDir = r'Z:\Dev\Data\CRIMAC\Data\03Subset\raw\01'
-    baseDir = r'C:\Users\Ruben\SkyLagring\Sync\Dev\Proj\2019Q3-CRIMAC\2021Q4-Integrator\Data\03Subset\raw\03'
+    args = parser.parse_args()
 
-    datain = baseDir  # the data directory where the preprocessed data files are located.
-    dataout = baseDir+r'\..'  # directory where the reports are written.
-    workin = baseDir  # the directory where the zarr prediction masks are located.
-    bottomin = baseDir  # the directory where the zarr bottom detection data is located (_optional_).
-
-    MAIN_FREQ = 38000
-    MAX_RANGE_SRC = 100
-    THRESHOLD = 0.2  # threshold for the classes
-    HOR_INTEGRATION_TYPE = 'distance' # 'ping' | 'time' | 'distance'
-    HOR_INTEGRATION_STEP = 0.05  # seconds | pings | meters | nmi
-
-    VERT_INTEGRATION_TYPE = 'range' # 'depth'
-    VER_INTEGRATION_STEP = 5  # Always in meters
-
-    OUTPUT_NAME = 'zarr_report.zarr'  # file name output (optional,  default to `out.<zarr/nc>`)
-    WRITE_PNG = 'zarr_report.png'  # No file is generated if left out
-
-    grid_file_name = '{}'.format(datain + os.sep + r'zarr_gridd_sub.zarr')
-    pred_file_name = '{}'.format(workin + os.sep + r'zarr_pred_sub.zarr')
-    bot_file_name = '{}'.format(workin + os.sep + r'zarr_bot_sub.zarr')
-    out_file_name = '{}'.format(dataout + os.sep + r'zarr_report.zarr')
-    Log(loggerFileName=dataout)
     rg = Reportgenerator(
-        grid_file_name,
-        pred_file_name,
-        bot_file_name,
-        out_file_name,
-        MAIN_FREQ,
-        THRESHOLD,
-        VERT_INTEGRATION_TYPE,
-        VER_INTEGRATION_STEP,
-        HOR_INTEGRATION_TYPE,
-        HOR_INTEGRATION_STEP,
-        MAX_RANGE_SRC
+        args.data,
+        args.pred,
+        args.bot,
+        args.out,
+        args.freq,
+        args.thr,
+        args.vtype,
+        args.vstep,
+        args.htype,
+        args.hstep,
+        args.range
     )
 
-    rg.save(dataout + os.sep + OUTPUT_NAME)
-    rg.save(dataout + os.sep + WRITE_PNG)
+    rg.save(args.out)
+    rg.save(args.img)
