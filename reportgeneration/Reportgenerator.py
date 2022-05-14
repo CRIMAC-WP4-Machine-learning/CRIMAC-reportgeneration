@@ -22,7 +22,6 @@ class Reportgenerator:
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
-
             self.has_out_file = True
             zarr_out = xr.open_zarr(out_fname)
             start_time = zarr_out['ping_time'].values[-1]
@@ -33,6 +32,8 @@ class Reportgenerator:
 
             Log().info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
             Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
+        else:
+            Log().info('Starting new outputfile')
 
         self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, zarr_bot, freq, threshold, vtype, vstep, htype, hstep, max_range)
         self.ds = None

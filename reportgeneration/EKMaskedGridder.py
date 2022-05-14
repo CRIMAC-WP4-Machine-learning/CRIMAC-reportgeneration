@@ -2,6 +2,7 @@ import dask
 import xarray as xr
 import numpy as np
 from reportgeneration.EKGridder import EKGridder
+from Logger import Logger as Log
 from dask.diagnostics import ProgressBar
 import pdb
 
@@ -15,6 +16,7 @@ class EKMaskedGridder:
         self.vtype = vtype
         # Ruben: Check the diff on this part:
         for cat in pred["annotation"]["category"]:
+            Log().info(f'Gridding category: {cat.values.flatten()[0]}')
             #pdb.set_trace()
             result = self.maskAndRegrid(
                 data,
