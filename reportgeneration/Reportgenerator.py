@@ -134,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("--thr", type=float, help="Threshold for predictions")
     parser.add_argument("--freq", type=float, help="Frequency to gridd")
     parser.add_argument("--range", type=float, help="Range to integrate over (m)")
-    parser.add_argument("--htype", type=str,choices=['ping', 'time' , 'distance'], help="Type of horizontal integration")
+    parser.add_argument("--htype", type=str,choices=['ping', 'time' , 'nmi'], help="Type of horizontal integration")
     parser.add_argument("--hstep", type=float, help="Step unit for horizontal integration : #pings | seconds | nautical miles)")
     parser.add_argument("--vtype", type=str, choices=['range', 'depth'], help="Type of vertical integration")
     parser.add_argument("--vstep", type=float,help="Step unit for horizontal integration : meters")
