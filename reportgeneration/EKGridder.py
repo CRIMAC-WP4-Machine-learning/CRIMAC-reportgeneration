@@ -39,8 +39,8 @@ class EKGridder(XGridder):
             self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
 
         elif _type == 'nmi':
-            Log().error('nmi as distance is not implimented')
-            """
+            #Log().error('nmi as distance is not implimented')
+
             sbins = data['distance']
             tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
 
@@ -48,37 +48,25 @@ class EKGridder(XGridder):
             isec = np.interp(tbins.compute().values, sbins.values, sec)
             mtime = [data['ping_time'].values[0]+np.timedelta64(int(np.round(t*1000)), 'ms') for t in isec]
             self.ping_time = np.array(mtime)
-            """
-            """
-            self.ping_time = dask.delayed(
-                xr.DataArray(mtime)
-                )
-
-        
-            self.distance = dask.delayed(
-                xr.DataArray(
-                    data['distance'].interp(ping_time=self.ping_time)
-                )
-            )
-            """
 
             """
             import matplotlib.pyplot as plt
 
             tbins = tbins.compute()
             plt.figure()
-            plt.plot(sbins, sbins, '.r')
-            plt.plot(tbins, tbins, '.b')
+            plt.plot(sbins, sbins, '.r', label='Orginal sample')
+            plt.plot(tbins, tbins, '.b', label='gridded sample')
             plt.xlabel('distance')
             plt.ylabel('distance')
+            plt.legend()
 
             plt.figure()
-            plt.plot(data['ping_time'].values, data['ping_time'].values, '.r')
-            plt.plot(self.ping_time.values, self.ping_time.values, '.b')
+            plt.plot(data['ping_time'].values, data['ping_time'].values, '.r',label='Orginal sample')
+            plt.plot(self.ping_time, self.ping_time, '.b',label='gridded sample')
             plt.xlabel('time')
             plt.ylabel('time')
-
-            print()
+            plt.legend()
+            plt.show()
             """
 
         elif _type == 'range':
