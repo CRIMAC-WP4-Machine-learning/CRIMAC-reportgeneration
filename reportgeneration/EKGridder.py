@@ -32,35 +32,12 @@ class EKGridder(XGridder):
             sbins = xr.DataArray(np.arange(0, len(data['ping_time'])))
             tbins = xr.DataArray(np.arange(0, len(data['ping_time']), step))
             self.ping_time = data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
-            #self.distance = data['distance'].values
-            """
-            self.ping_time = xr.DataArray(
-                    data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
-                )
-
-            self.distance = xr.DataArray(
-                    data['distance'].sel(ping_time=self.ping_time)
-                )
-            """
 
         elif _type == 'time':
             sbins = self.calckTimeInSeconds(data['ping_time'])
             tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
             self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
-            """
-            self.ping_time = dask.delayed(
-                xr.DataArray(
-                    np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
-                )
-            )
-            """
-            """
-            self.distance = dask.delayed(
-                xr.DataArray(
-                    data['distance'].interp(ping_time=self.ping_time)
-                )
-            )
-            """
+
         elif _type == 'nmi':
             Log().error('nmi as distance is not implimented')
             """
