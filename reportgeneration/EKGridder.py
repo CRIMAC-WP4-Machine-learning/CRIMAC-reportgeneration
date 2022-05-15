@@ -36,7 +36,7 @@ class EKGridder(XGridder):
         elif _type == 'time':
             sbins = self.calckTimeInSeconds(data['ping_time'])
             tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
-            self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(step, 's'))
+            self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(int(step), 's'))
 
         elif _type == 'nmi':
             #Log().error('nmi as distance is not implimented')
