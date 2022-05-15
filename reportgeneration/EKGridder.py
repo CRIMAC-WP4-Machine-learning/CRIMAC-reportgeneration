@@ -73,7 +73,11 @@ class EKGridder(XGridder):
             sbins = data['range']
             tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
         elif _type == 'depth':
+            # Maby use some calculations from  : https://www.researchgate.net/profile/Nils-Olav-Handegard/publication/7502150_Tracking_individual_fish_from_a_moving-platform_using_a_split-beam_transducer/links/0fcfd50b4768fad718000000/Tracking-individual-fish-from-a-moving-platform-using-a-split-beam-transducer.pdf
+            # pp 2222, Equation between B3 and B4
             Log().error('depth as vertical integrator binning not implemented')
+
+
         else:
             Log().error('{} integration type not defined'.format(_type))
 
