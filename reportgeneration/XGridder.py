@@ -1,5 +1,3 @@
-
-
 import numpy as np
 import xarray as xr
 import dask
@@ -11,7 +9,6 @@ from NPGridder import NPGridder, GridType
 
 class XGridder(NPGridder):
 
-    # target_v_bins,source_v_bins, target_h_bins, source_h_bins
     def __init__(self, target_v_bins=None, source_v_bins=None, target_h_bins=None, source_h_bins=None):
         super().__init__(target_v_bins, source_v_bins, target_h_bins, source_h_bins)
 
