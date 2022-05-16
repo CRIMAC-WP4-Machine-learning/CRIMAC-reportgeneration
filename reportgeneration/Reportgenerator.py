@@ -36,6 +36,7 @@ class Reportgenerator:
             Log().info('Starting new outputfile')
 
         self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, zarr_bot, freq, threshold, vtype, vstep, htype, hstep, max_range)
+
         self.ds = None
 
     def save(self, fname):
@@ -45,27 +46,27 @@ class Reportgenerator:
 
         # Do griding if it has not already been done
         if file_ext in ['.zarr', '.png'] and self.ds is None:
-            self.ds = self.ekmg.gridd()
+
+            self.ds = xr.concat(self.ekmg.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
             r0 = self.ds['range'].values[1]
             r1 = self.ds['range'].values[-2]
             self.ds = self.ds.sel(range=slice(r0, r1))
 
-            # Remove first and last bin along ping axis to remove nan and use info on whole bins only
-            #p0 = self.ds['ping_time'].values[1]
-            #p1 = self.ds['ping_time'].values[-2]
-            #self.ds = self.ds.sel(ping_time=slice(p0, p1))
-
             self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time'])-1))
 
-
         if file_ext == '.zarr':
-            compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
-            encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
+
             if self.has_out_file:
                 self.ds.to_zarr(fname, mode='a',append_dim='ping_time')
             else:
+
+                compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
+
+                encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
+
+
                 self.ds.to_zarr(fname, mode='w', encoding=encoding)
 
         elif file_ext == '.png':
@@ -82,10 +83,11 @@ class Reportgenerator:
 
                 # Set axis limits
                 x_lims = mdates.date2num(data['ping_time'].values)
+
                 extent = [x_lims[0], x_lims[-1].astype(float), data['range'].values[-1], data['range'].values[0]]
-
-                im = plt.gca().imshow(10 * np.log10(data.transpose()['sv'].values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
-
+                im = plt.gca().imshow(10 * np.log10(data['sv'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
+                #im = plt.gca().imshow(10 * np.log10(data['sv'].transpose() + 10e-20), origin='upper')
+                #a=10 * np.log10(data['sv'].transpose() + 10e-20)
                 plt.ylabel('Sv {}(m)'.format(self.ekmg.vtype))
 
                 # Format time axis
@@ -156,4 +158,6 @@ if __name__ == "__main__":
     )
 
     rg.save(args.out)
+
     rg.save(args.img)
+

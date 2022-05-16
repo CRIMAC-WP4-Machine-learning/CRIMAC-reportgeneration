@@ -59,52 +59,10 @@ class EKMaskedGridder:
         masked_sv = masked_sv.assign_coords(distance=data.distance)
 
         rg = EKGridder(masked_sv, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range).regrid()
-        rg = rg.assign_attrs(category=cat)
+        rg = rg.assign_coords(category=[cat])
 
         return rg
 
-    def to_xarray(self, xlist):
-        svcat = []
-        categories = []
-        for elm in xlist:
-            svcat.append(elm['sv'].values)
-            categories.append(elm.attrs['category'])
-
-        """
-        ds = xr.Dataset(
-            data_vars=dict(sv=(['category', 'ping_time', 'range'], svcat)),
-            coords=dict(
-                category=categories,
-                range=xlist[0]['range'],
-                ping_time=xlist[0]['ping_time'],
-                distance=xlist[0]['distance'],
-                latitude=xlist[0]['latitude'],
-                longitude=xlist[0]['longitude']
-            )
-        )
-        """
-        ds = xr.Dataset(
-            {'sv' : (['category', 'ping_time', 'range'], np.array(svcat))},
-            coords={
-                'category' : categories,
-                'range' : xlist[0]['range'].values,
-                'ping_time' : xlist[0]['ping_time'].values,
-                'distance' :  ('ping_time', xlist[0]['distance'].values),
-                'latitude': ('ping_time', xlist[0]['latitude'].values),
-                'longitude': ('ping_time', xlist[0]['longitude'].values),
-                'channel_id' : xlist[0]['channel_id'].values
-            }
-         )
-
-        return ds
-
-    def gridd(self):
-        #ready = dask.delayed(self.to_xarray)(self.worker_data)
-        #with ProgressBar():
-        #    allData = ready.compute(scheduler='threads')
-        allData = self.to_xarray(self.worker_data)
-            
-        return allData
 
 
 

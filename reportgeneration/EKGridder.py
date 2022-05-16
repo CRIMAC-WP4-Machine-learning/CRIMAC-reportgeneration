@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-# import dask
+import dask
 from Logger import Logger as Log
 from reportgeneration.XGridder import XGridder
 
@@ -99,25 +99,24 @@ class EKGridder(XGridder):
             data = self.data
 
         sv_s = data.fillna(0).squeeze()
-
-        gdata = super().regrid(sv_s['sv'].values)
+        gdata = super().regrid(sv_s['sv'])
 
         data = data.sel(range=slice(0, 0))  # We dont ned values in range anymore
         data = data.interp(ping_time=self.ping_time)
 
+        gdata = dask.array.expand_dims(gdata,axis=0)
         ds = xr.Dataset(
-            data_vars=dict(sv=(['ping_time', 'range'], gdata)),
+            data_vars=dict(sv=(['category','ping_time', 'range'], gdata)),
             coords=dict(
-                frequency=data['frequency'],
-                range=self.target_v_bins.compute().values,
+                frequency=data['frequency'].values,
+                range=self.target_v_bins.values,
                 ping_time=data['ping_time'].values,
-                distance= ('ping_time',data['distance'].values),
-                latitude= ('ping_time',data['latitude'].values),
-                longitude= ('ping_time',data['longitude'].values),
-                channel_id= data['channel_id'].values
+                distance=('ping_time', data['distance'].values),
+                latitude=('ping_time', data['latitude'].values),
+                longitude=('ping_time', data['longitude'].values),
+                channel_id=data['channel_id'].values
             )
         )
-
         return ds
 
 

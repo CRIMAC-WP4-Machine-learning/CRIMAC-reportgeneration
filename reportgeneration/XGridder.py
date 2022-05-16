@@ -14,21 +14,30 @@ class XGridder(NPGridder):
 
     def _regrid(self, W, data):
         # Regridd
-        data_mod = np.vstack((data, np.zeros(data.shape[1])))
-        return np.dot(W.compute(), data_mod)
+
+        data_mod = dask.array.vstack((data, np.zeros(data.shape[1])))
+        #data_mod = np.vstack((data, np.zeros(data.shape[1])))
+
+        return np.dot(W, data_mod)
 
     def regrid(self, data):
 
         if self.griddType == GridType.OneDimension:
             W = self._resampleWeight(self.target_v_bins.values, self.source_v_bins.values)
-            gridded = self._regrid(W, data.T).T
+            gridded = self._regrid(W, data.transpose()).T
 
             return gridded
 
         elif self.griddType == GridType.TwoDimension:
-            WX = dask.delayed(self._resampleWeight)(self.target_v_bins.values, self.source_v_bins.values)
-            WY = dask.delayed(self._resampleWeight)(self.target_h_bins.values, self.source_h_bins.values)
-            griddedX = self._regrid(WX, data.T).T
+            #WX = dask.delayed(self._resampleWeight)(self.target_v_bins.values, self.source_v_bins.values)
+            #WY = dask.delayed(self._resampleWeight)(self.target_h_bins.values, self.source_h_bins.values)
+            WX = self._resampleWeight(self.target_v_bins.values, self.source_v_bins.values)
+            WY = self._resampleWeight(self.target_h_bins.values, self.source_h_bins.values)
+            # THIS crashes
+
+            #griddedX = self._regrid(WX, data.T).T
+            griddedX = self._regrid(WX, data.transpose()).T
+
             griddedXY = self._regrid(WY, griddedX)
 
             return griddedXY
