@@ -66,15 +66,16 @@ class Reportgenerator:
 
                 encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
 
-
+                Log().info(f'Writing gridded data to : {fname}')
                 self.ds.to_zarr(fname, mode='w', encoding=encoding)
+                Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
 
             vmax = -20
             vmin = -80
             for cat in self.ds['category']:
-
+                Log().info(f'Generating image for category : {cat.values.flatten()[0]}')
                 data = self.ds.sel(category=cat)
 
                 fig = plt.figure(figsize=(12, 6))
@@ -85,9 +86,9 @@ class Reportgenerator:
                 x_lims = mdates.date2num(data['ping_time'].values)
 
                 extent = [x_lims[0], x_lims[-1].astype(float), data['range'].values[-1], data['range'].values[0]]
+
                 im = plt.gca().imshow(10 * np.log10(data['sv'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
-                #im = plt.gca().imshow(10 * np.log10(data['sv'].transpose() + 10e-20), origin='upper')
-                #a=10 * np.log10(data['sv'].transpose() + 10e-20)
+
                 plt.ylabel('Sv {}(m)'.format(self.ekmg.vtype))
 
                 # Format time axis
@@ -158,6 +159,4 @@ if __name__ == "__main__":
     )
 
     rg.save(args.out)
-
     rg.save(args.img)
-
