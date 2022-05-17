@@ -3,8 +3,7 @@ click==8.0.1
 cloudpickle==1.6.0
 colorama==0.4.4
 cycler==0.10.0
-dask==2021.6.0
-distributed==2021.6.0
+dask==2022.5.0
 docrep==0.2.7
 fasteners==0.16
 fsspec==2021.5.0
@@ -15,7 +14,8 @@ locket==0.2.1
 matplotlib==3.4.2
 msgpack==1.0.2
 numcodecs==0.7.3
-numpy==1.20.3
+numpy==1.22.3
+packaging==21.3
 pandas==1.2.4
 partd==1.2.0
 Pillow==8.2.0
@@ -31,7 +31,7 @@ sortedcontainers==2.4.0
 tblib==1.7.0
 toolz==0.11.1
 tornado==6.1
-xarray==0.18.2
+xarray==2022.3.0
 xgcm==0.5.2
 zarr==2.8.3
 zict==2.0.0
