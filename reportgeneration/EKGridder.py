@@ -42,6 +42,8 @@ class EKGridder(XGridder):
             #Log().error('nmi as distance is not implimented')
 
             sbins = data['distance']
+
+            # Last distance can be nan, use previous
             tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
 
             sec = self.calckTimeInSeconds(data['ping_time'])

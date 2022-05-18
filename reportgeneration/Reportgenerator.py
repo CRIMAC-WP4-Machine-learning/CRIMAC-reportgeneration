@@ -19,6 +19,7 @@ class Reportgenerator:
             zarr_bot = None
         else:
             zarr_bot = xr.open_zarr(bot_fname)
+
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
