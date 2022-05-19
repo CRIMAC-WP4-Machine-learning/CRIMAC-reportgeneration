@@ -92,7 +92,7 @@ class DockerMain :
             Log().info(f'Valied types : {valied_vitypes}')
             return False
 
-        if self.vistep is None or not isinstance(self.histep, (float, int)):
+        if self.vistep is None or not isinstance(self.vistep, (float, int)):
             Log().error('VERT_INTEGRATION_STEP no set correctly set')
             Log().info(f'Types set to {self.vistep}')
             Log().info('Type mist be float or int')
