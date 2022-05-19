@@ -86,13 +86,13 @@ class DockerMain :
             return False
 
         valied_vitypes = ['range', 'depth']
-        if self.vitype is None or self.hitype not in valied_vitypes:
+        if self.vitype is None or self.vitype not in valied_vitypes:
             Log().error(f'VERT_INTEGRATION_TYPE no set or incorrect')
             Log().info(f'Types set to {self.vitype}')
             Log().info(f'Valied types : {valied_vitypes}')
             return False
 
-        if self.vistep is None or not isinstance(self.histep, (float, int)):
+        if self.vistep is None or not isinstance(self.vistep, (float, int)):
             Log().error('VERT_INTEGRATION_STEP no set correctly set')
             Log().info(f'Types set to {self.vistep}')
             Log().info('Type mist be float or int')
