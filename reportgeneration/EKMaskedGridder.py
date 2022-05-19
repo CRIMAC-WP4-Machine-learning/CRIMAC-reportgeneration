@@ -20,7 +20,7 @@ class EKMaskedGridder:
             #pdb.set_trace()
             result = self.maskAndRegrid(
                 data,
-                pred["annotation"]["category"==cat.values],
+                pred["annotation"].sel(category=cat.values),
                 bot,
                 cat,
                 freq,
@@ -31,30 +31,24 @@ class EKMaskedGridder:
                 hstep,
                 max_range
             )
-
+            # Insert metadata
+            # https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-data-organisation
             self.worker_data.append(result)
 
     def maskAndRegrid(self, data, mask,bot, cat, FREQ, THR, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range):
 
         data = data.sel(frequency=FREQ)
 
-        # Threashold prediction mask
-        mask = mask.where(mask > THR, 0)
-        mask = mask.where(mask < THR, 1)
-        mask = mask.transpose('ping_time','range')
-        #import matplotlib.pylab as plt
-        #plt.imshow(mask.values.astype(float))
-        #plt.show()
-        # Bottom predictions give 1 for bottom and below and nan for all other.
-        # We are interested in all other, do some swapping to make a mask
-        # 1 -> 0
-        # nan -> 1
-        if bot is None:
+        mask = mask.transpose('ping_time', 'range')
+        """
+        import matplotlib.pylab as plt
+        plt.imshow(mask[::200, :].values.astype(float))
+        plt.axis('auto')
+        plt.show()
+        """
+
+        with dask.config.set(**{'array.slicing.split_large_chunks': False}):
             masked_sv = data * mask
-        else:
-            bot = bot.where(bot != 1, 0)
-            bot = bot.where(bot == 0, 1)
-            masked_sv = data * mask * bot['bottom_range']
 
         masked_sv = masked_sv.assign_coords(distance=data.distance)
 
