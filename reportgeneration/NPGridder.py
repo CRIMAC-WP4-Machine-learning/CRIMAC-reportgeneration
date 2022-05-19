@@ -1,4 +1,4 @@
-
+import xarray as xr
 from enum import Enum, auto
 import numpy as np
 
@@ -46,7 +46,8 @@ class NPGridder:
         bin_r_s = np.append(bin_r_s, r_s[-1] + (r_s[-1] - r_s[-2]) / 2)
 
         # Initialize W matrix (sparse)
-        W = np.zeros([len(r_t), len(r_s) + 1])
+        W = xr.DataArray(np.zeros([len(r_t), len(r_s) + 1]))
+        #W = np.zeros([len(r_t), len(r_s) + 1])
         # NB: + 1 length for space to NaNs in edge case
 
         # Loop over the target bins
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     rangeStep = 5
     ratio=[]
     for i in range(0, noBootstraps):
-
+        print(i)
 
         # generate data
         sampleRange = np.arange(0, maxRange, 0.18)

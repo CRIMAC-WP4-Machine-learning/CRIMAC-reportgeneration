@@ -24,20 +24,15 @@ class XGridder(NPGridder):
 
         if self.griddType == GridType.OneDimension:
             W = self._resampleWeight(self.target_v_bins.values, self.source_v_bins.values)
-            gridded = self._regrid(W, data.transpose()).T
+            gridded = self._regrid(W, data.transpose()).transpose()
 
             return gridded
 
         elif self.griddType == GridType.TwoDimension:
-            #WX = dask.delayed(self._resampleWeight)(self.target_v_bins.values, self.source_v_bins.values)
-            #WY = dask.delayed(self._resampleWeight)(self.target_h_bins.values, self.source_h_bins.values)
             WX = self._resampleWeight(self.target_v_bins.values, self.source_v_bins.values)
+            griddedX = self._regrid(WX, data.transpose()).transpose()
+
             WY = self._resampleWeight(self.target_h_bins.values, self.source_h_bins.values)
-            # THIS crashes
-
-            #griddedX = self._regrid(WX, data.T).T
-            griddedX = self._regrid(WX, data.transpose()).T
-
             griddedXY = self._regrid(WY, griddedX)
 
             return griddedXY
