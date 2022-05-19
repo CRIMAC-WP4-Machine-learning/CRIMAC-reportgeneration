@@ -3,8 +3,6 @@ import xarray as xr
 import numpy as np
 from reportgeneration.EKGridder import EKGridder
 from Logger import Logger as Log
-from dask.diagnostics import ProgressBar
-import pdb
 
 """
     Lossless gridding masked with predictions on EKdata from gridder and prediction from predictor
@@ -14,48 +12,30 @@ class EKMaskedGridder:
     def __init__(self,data=None, pred=None,bot=None,freq=38000, threshold=0.5,vtype='range',vstep=50,htype='ping',hstep=50, max_range=500):
         self.worker_data = []
         self.vtype = vtype
-        # Ruben: Check the diff on this part:
+
         for cat in pred["annotation"]["category"]:
             Log().info(f'Gridding category: {cat.values.flatten()[0]}')
-            #pdb.set_trace()
-            result = self.maskAndRegrid(
-                data,
-                pred["annotation"].sel(category=cat.values),
-                bot,
-                cat,
-                freq,
-                threshold,
-                vtype,
-                vstep,
-                htype,
-                hstep,
-                max_range
-            )
+
+            fdata = data.sel(frequency=freq)
+
+            mask = pred["annotation"].sel(category=cat.values)
+            mask = mask.transpose('ping_time', 'range')
+            """
+            import matplotlib.pylab as plt
+            plt.imshow(mask[::200, :].values.astype(float))
+            plt.axis('auto')
+            plt.show()
+            """
+            with dask.config.set(**{'array.slicing.split_large_chunks': False}):
+                masked_sv = fdata * mask
+
+            masked_sv = masked_sv.assign_coords(distance=fdata.distance)
+
+            rg = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range).regrid()
+            rg = rg.assign_coords(category=[cat])
             # Insert metadata
             # https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-data-organisation
-            self.worker_data.append(result)
-
-    def maskAndRegrid(self, data, mask,bot, cat, FREQ, THR, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range):
-
-        data = data.sel(frequency=FREQ)
-
-        mask = mask.transpose('ping_time', 'range')
-        """
-        import matplotlib.pylab as plt
-        plt.imshow(mask[::200, :].values.astype(float))
-        plt.axis('auto')
-        plt.show()
-        """
-
-        with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-            masked_sv = data * mask
-
-        masked_sv = masked_sv.assign_coords(distance=data.distance)
-
-        rg = EKGridder(masked_sv, V_TYPE, V_STEP, H_TYPE, H_STEP, max_range).regrid()
-        rg = rg.assign_coords(category=[cat])
-
-        return rg
+            self.worker_data.append(rg)
 
 
 
