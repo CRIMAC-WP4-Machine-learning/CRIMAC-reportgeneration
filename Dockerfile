@@ -11,6 +11,7 @@ RUN apt-get update -y && \
     (test ! -f /ca.cer || git config --global http.sslCAInfo /ca.cer) && \
     (test ! -f /ca.cer || pip config set global.cert /ca.cer) && \
     pip install --prefix=/install -r /requirements.txt
+RUN python -m pip install "dask[distributed]" --upgrade
 
 FROM python:3.8-slim
 
