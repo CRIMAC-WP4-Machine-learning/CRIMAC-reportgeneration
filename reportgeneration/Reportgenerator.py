@@ -1,10 +1,10 @@
-import zarr
 import xarray as xr
 from numcodecs import Blosc
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
+
 from Logger import Logger as Log
 from reportgeneration.EKMaskedGridder import EKMaskedGridder
 
@@ -40,14 +40,9 @@ class Reportgenerator:
 
         self.ds = None
 
-    def save(self, fname):
+    def getGridd(self):
 
-        file_path, file_ext = os.path.splitext(fname)
-        file_ext = file_ext.lower()
-
-        # Do griding if it has not already been done
-        if file_ext in ['.zarr', '.png'] and self.ds is None:
-
+        if self.ds is None:
             self.ds = xr.concat(self.ekmg.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
@@ -55,10 +50,17 @@ class Reportgenerator:
             r1 = self.ds['range'].values[-2]
             self.ds = self.ds.sel(range=slice(r0, r1))
 
-            self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time'])-1))
+            self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time']) - 1))
+
+        return self.ds
+
+    def save(self, fname):
+
+        file_path, file_ext = os.path.splitext(fname)
+        file_ext = file_ext.lower()
 
         if file_ext == '.zarr':
-
+            self.getGridd()
             if self.has_out_file:
                 self.ds.to_zarr(fname, mode='a',append_dim='ping_time')
             else:
@@ -73,6 +75,11 @@ class Reportgenerator:
                 Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
+
+            if not os.path.exists(file_path):
+                os.makedirs(file_path)
+
+            self.getGridd()
 
             vmax = -20
             vmin = -80
@@ -108,7 +115,7 @@ class Reportgenerator:
                 plt.colorbar(im, cax=cax)
 
                 plt.savefig('{}_{}.png'.format(file_path, cat.values))
-
+                plt.close()
         else:
             Log().error('{} format not supported'.format(fname[-4:]))
 """
@@ -129,6 +136,7 @@ python Reportgenerator.py \
 
 if __name__ == "__main__":
     import argparse
+    from pathlib import Path
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, help="Acoustic Sv data")
@@ -162,3 +170,20 @@ if __name__ == "__main__":
 
     rg.save(args.out)
     rg.save(args.img)
+
+    gridd = rg.getGridd()
+
+    dstDir = str(Path(args.out).parent)
+    for cat in gridd['category']:
+        Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
+        sv = gridd.sel(category=cat.values)['sv']
+        if 'range' in gridd.coords._names:
+            sum_sv = sv.sum(dim='range')
+        elif 'depth' in gridd.coords._names:
+            sum_sv = sv.sum(dim='depth')
+
+        sum_sv.plot()
+        if not os.path.exists(dstDir):
+            os.makedirs(dstDir)
+        plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
+        plt.close()
