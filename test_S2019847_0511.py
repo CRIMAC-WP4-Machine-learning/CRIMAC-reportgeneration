@@ -1,4 +1,3 @@
-
 repo_dir ='/mnt/d/repos/Github/'
 data_dir = '/mnt/d/DATAscratch/crimac-scratch/'
 sys.path.append(repo_dir+'CRIMAC-reportgeneration/reportgeneration/')
@@ -7,40 +6,45 @@ import reportgeneration.Reportgenerator as rg
 import xarray as xr
 import dask
 import matplotlib.pyplot as plt
-import subprocess
 import numpy as np
 import pandas as pd
 
-grid_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_sv.zarr'
-pred_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_labels.zarr'
-bot_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_bottom.zarr'
-report_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_0.zarr'
-LSSS_report_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/LSSS/Reports/ListUserFile20__L2887.0-3069.3.xml'
+grid_file_name = data_dir + \
+                 '2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_sv.zarr'
+pred_file_name = data_dir + \
+                 '2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_labels.zarr'
+bot_file_name = data_dir + \
+                '2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_bottom.zarr'
+report_file_name = data_dir + \
+                   '2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_0.zarr'
+LSSS_report_file_name = data_dir + \
+                        '2019/S2019847_0511/ACOUSTIC/LSSS/Reports/ListUserFile20__L2887.0-3069.3.xml'
 
 # Test on depth vs ping
 main_freq = 38000
 threshold = 0.8
-vitype = 'depth'
+# vitype = 'depth'
+vitype = 'range'
 vistep = 10
-hitype = 'nmi'
-histep = 0.1
-#hitype = 'ping'
-#histep = 1000
+# hitype = 'nmi'
+# histep = 0.1
+hitype = 'ping'
+histep = 1000
 max_range = 500
 
-#rep = rg.Reportgenerator(grid_file_name,
-#                         pred_file_name,
-#                         bot_file_name,
-#                         out_file_name,
-#                         main_freq,
-#                         threshold,
-#                         vitype,
-#                         vistep,
-#                         hitype,
-#                         histep,
-#                         max_range)
+rep = rg.Reportgenerator(grid_file_name,
+                         pred_file_name,
+                         bot_file_name,
+                         report_file_name,
+                         main_freq,
+                         threshold,
+                         vitype,
+                         vistep,
+                         hitype,
+                         histep,
+                         max_range)
 
-#rep.save(out_file_name)
+rep.save(report_file_name)
 
 #rep.save(out_file_name+'.png')
 
@@ -49,14 +53,9 @@ max_range = 500
 # Reading the report
 rep = xr.open_zarr(report_file_name)
 
-# I am not able to write to the nc
-#rep.to_netcdf(report_file_name+'.nc')
+# Write to csv via pandas data frame
+rep.to_dataframe().to_csv(report_file_name+'.csv')
 
-# I'll dump the data to a data array instead
-dat = rep.sv.sel(category=27)
-dat
-n=pd.DataFrame(data=nils.values, columns=dat.range)
-shape(nils)
 # Reading the LSSS report
 
 #LSSS_report_file_name 
