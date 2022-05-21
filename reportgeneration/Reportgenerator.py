@@ -1,4 +1,4 @@
-
+import zarr
 import xarray as xr
 from numcodecs import Blosc
 import numpy as np
@@ -68,7 +68,8 @@ class Reportgenerator:
                 encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
 
                 Log().info(f'Writing gridded data to : {fname}')
-                self.ds.to_zarr(fname, mode='w', encoding=encoding)
+                self.ds.to_zarr(fname, mode='w', encoding=encoding) # Crash for large dataset 150GB
+                #xr.Dataset(self.ds).to_netcdf('test.nc')            # Crash for large dataset 150GB
                 Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
