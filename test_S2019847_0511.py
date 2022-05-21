@@ -45,33 +45,32 @@ rep = rg.Reportgenerator(grid_file_name,
                          max_range)
 
 rep.save(report_file_name)
-
-#rep.save(out_file_name+'.png')
+rep.save(out_file_name+'.png')
 
 # Testing
 
-# Reading the report
+# Reading the report & original data
+grid = xr.open_zarr(grid_file_name)
+pred = xr.open_zarr(pred_file_name)
 rep = xr.open_zarr(report_file_name)
 
-# Write to csv via pandas data frame
-rep.to_dataframe().to_csv(report_file_name+'.csv')
+# Plotting
 
-# Reading the LSSS report
+# "Integrator" based on xarray mean functions multiplied with 500 m,
+# should be similar to Sa
+hres = (grid.sv.sel(frequency=38000) *
+        pred.annotation.sel(category=27)).mean(dim='range').resample(
+            ping_time='H').mean() * 500
+Sa_raw = 10*np.log10(hres+0.00000001)
 
-#LSSS_report_file_name 
-#retcode = subprocess.call("/usr/bin/Rscript --vanilla -e 'source(\"/pathto/MyrScript.r\")'", shell=True)
+# Do the same for the output from the integrator. Should be similar'sih
+# as the plot from the original data
+lres = rep.sv.sel(category=27).mean(dim='range').resample(
+            ping_time='H').mean() * 500
+Sa_int = 10*np.log10(lres+0.00000001)
 
-nilz=10*np.log10(rep.isel(category=3).sv)
-
-nilz.T.plot()
-plt.show()
-
+fig, axes = plt.subplots(nrows=2)
+Sa_int.plot(ax=axes[0])
+Sa_raw.plot(ax=axes[1])
 plt.savefig(report_file_name+'_sv.png')
-plt.close()
 
-t = np.arange(0.0, 2.0, 0.01)
-s = 1 + np.sin(2*np.pi*t)
-plt.plot(t, s)
-
-plt.title('About as simple as it gets, folks')
-plt.show()
