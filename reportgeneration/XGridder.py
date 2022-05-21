@@ -2,12 +2,14 @@ import numpy as np
 import xarray as xr
 import dask
 from NPGridder import NPGridder, GridType
+#from ZarrGridder import ZarrGridder,GridType
 
 """
     Lossless griding on Xarrays    
 """
 
 class XGridder(NPGridder):
+#class XGridder(ZarrGridder):
 
     def __init__(self, target_v_bins=None, source_v_bins=None, target_h_bins=None, source_h_bins=None):
         super().__init__(target_v_bins, source_v_bins, target_h_bins, source_h_bins)
