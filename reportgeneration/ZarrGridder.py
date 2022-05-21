@@ -2,6 +2,9 @@ import zarr
 import xarray as xr
 from enum import Enum, auto
 import numpy as np
+import uuid
+import os
+import shutil
 
 
 class GridType(Enum):
@@ -13,7 +16,7 @@ class GridType(Enum):
     Based on : https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-preprocessing/blob/master/CRIMAC_preprocess.py
 """
 
-class NPGridder:
+class ZarrGridder:
     # target_v_bins, source_v_bins, target_h_bins, source_h_bins
     def __init__(self, target_v_bins=None, source_v_bins=None, target_h_bins=None, source_h_bins=None):
 
@@ -26,6 +29,14 @@ class NPGridder:
             self.griddType = GridType.OneDimension
         else:
             self.griddType = GridType.TwoDimension
+
+        self.storageDir='tmp_W'
+
+        self.cleanup()
+
+    def cleanup(self):
+        if os.path.exists(self.storageDir):
+            shutil.rmtree(self.storageDir)
 
     def _resampleWeight(self, r_t, r_s):
         """
@@ -47,8 +58,12 @@ class NPGridder:
         bin_r_s = np.append(bin_r_s, r_s[-1] + (r_s[-1] - r_s[-2]) / 2)
 
         # Initialize W matrix (sparse)
+        fname = self.storageDir+os.sep+str(uuid.uuid1())+'.zarr'
+        store = zarr.DirectoryStore(fname)
+        W=zarr.zeros((len(r_t), len(r_s) + 1),chunks=(100, 100), store=store, overwrite=True,compressor=None)
 
-        W = np.zeros([len(r_t), len(r_s) + 1])
+
+        #W = np.zeros([len(r_t), len(r_s) + 1])
         # NB: + 1 length for space to NaNs in edge case
 
         # Loop over the target bins
