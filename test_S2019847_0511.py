@@ -1,3 +1,4 @@
+
 repo_dir ='/mnt/d/repos/Github/'
 data_dir = '/mnt/d/DATAscratch/crimac-scratch/'
 sys.path.append(repo_dir+'CRIMAC-reportgeneration/reportgeneration/')
@@ -6,11 +7,15 @@ import reportgeneration.Reportgenerator as rg
 import xarray as xr
 import dask
 import matplotlib.pyplot as plt
+import subprocess
+import numpy as np
+import pandas as pd
 
 grid_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_sv.zarr'
 pred_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_labels.zarr'
 bot_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/GRIDDED/S2019847_0511_bottom.zarr'
-out_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_0.zarr'
+report_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_0.zarr'
+LSSS_report_file_name = data_dir+'2019/S2019847_0511/ACOUSTIC/LSSS/Reports/ListUserFile20__L2887.0-3069.3.xml'
 
 # Test on depth vs ping
 main_freq = 38000
@@ -23,26 +28,51 @@ histep = 0.1
 #histep = 1000
 max_range = 500
 
-rep = rg.Reportgenerator(grid_file_name,
-                         pred_file_name,
-                         bot_file_name,
-                         out_file_name,
-                         main_freq,
-                         threshold,
-                         vitype,
-                         vistep,
-                         hitype,
-                         histep,
-                         max_range)
+#rep = rg.Reportgenerator(grid_file_name,
+#                         pred_file_name,
+#                         bot_file_name,
+#                         out_file_name,
+#                         main_freq,
+#                         threshold,
+#                         vitype,
+#                         vistep,
+#                         hitype,
+#                         histep,
+#                         max_range)
 
-rep.save(out_file_name)
+#rep.save(out_file_name)
 
-rep.save(out_file_name+'.png')
+#rep.save(out_file_name+'.png')
 
-rep = xr.open_zarr(out_file_name)
+# Testing
 
-rep.isel(category=3).plot
+# Reading the report
+rep = xr.open_zarr(report_file_name)
 
+# I am not able to write to the nc
+#rep.to_netcdf(report_file_name+'.nc')
+
+# I'll dump the data to a data array instead
+dat = rep.sv.sel(category=27)
+dat
+n=pd.DataFrame(data=nils.values, columns=dat.range)
+shape(nils)
+# Reading the LSSS report
+
+#LSSS_report_file_name 
+#retcode = subprocess.call("/usr/bin/Rscript --vanilla -e 'source(\"/pathto/MyrScript.r\")'", shell=True)
+
+nilz=10*np.log10(rep.isel(category=3).sv)
+
+nilz.T.plot()
 plt.show()
-plt.savefig(out_file_name+'_sv.png')
+
+plt.savefig(report_file_name+'_sv.png')
 plt.close()
+
+t = np.arange(0.0, 2.0, 0.01)
+s = 1 + np.sin(2*np.pi*t)
+plt.plot(t, s)
+
+plt.title('About as simple as it gets, folks')
+plt.show()
