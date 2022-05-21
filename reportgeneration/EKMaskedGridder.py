@@ -19,6 +19,9 @@ class EKMaskedGridder:
             fdata = data.sel(frequency=freq)
 
             mask = pred["annotation"].sel(category=cat.values)
+            if cat.values.flatten()[0] < 0:
+                mask = xr.where(mask < 0, 1,mask)
+
             mask = mask.transpose('ping_time', 'range')
             """
             import matplotlib.pylab as plt
@@ -35,9 +38,14 @@ class EKMaskedGridder:
             rg = rg.assign_coords(category=[cat])
             # Insert metadata
             # https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-data-organisation
+            #self.addMetadata(rg, fdata)
             self.worker_data.append(rg)
 
+    def addMetadata(self, gdata, data):
 
+        print('')
+
+        pass
 
 
 if __name__ == "__main__":
