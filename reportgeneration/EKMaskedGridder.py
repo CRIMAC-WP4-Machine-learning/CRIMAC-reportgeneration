@@ -26,7 +26,7 @@ class EKMaskedGridder:
             plt.axis('auto')
             plt.show()
             """
-            with dask.config.set(**{'array.slicing.split_large_chunks': False}):
+            with dask.config.set(**{'array.slicing.split_large_chunks': True}):
                 masked_sv = fdata * mask
 
             masked_sv = masked_sv.assign_coords(distance=fdata.distance)
