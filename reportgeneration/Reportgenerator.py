@@ -71,7 +71,8 @@ class Reportgenerator:
 
                 Log().info(f'Writing gridded data to : {fname}')
                 self.ds.to_zarr(fname, mode='w', encoding=encoding) # Crash for large dataset 150GB
-                #xr.Dataset(self.ds).to_netcdf('test.nc')            # Crash for large dataset 150GB
+                #self.ds.to_dataframe().netcdf(fname + '.csv')        # Crash for large dataset 150GB
+                #self.ds.to_dataframe().to_csv(fname + '.csv')       # Crash for large dataset 150GB
                 Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
