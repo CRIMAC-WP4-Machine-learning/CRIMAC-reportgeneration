@@ -47,25 +47,29 @@ class Reportgenerator:
         if self.ds is None:
 
             # Hack to avoid crash when we save final grid
+            # Store grid for each category
+            # Then reload and concatenate
+
+            # Enshure tmp directory exists
             self.tmp_path_name = str(Path(self.out_fname).parent) + os.sep + '__tmp_main_out'
             if not os.path.exists(self.tmp_path_name):
                 os.makedirs(self.tmp_path_name)
 
+            # Store each category
             fnames = []
             for d in self.ekmg.worker_data:
                 fname = self.tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
                 fnames.append(fname)
                 d.to_zarr(fnames[-1], mode='w')
 
-            dl=[]
+            # Reload and concatinate
+            self.ekmg.worker_data = []
             for fname in fnames:
                 d = xr.open_zarr(fname)
-                dl.append(d)
-
-            self.ds = xr.concat(dl, dim='category')
+                self.ekmg.worker_data.append(d)
             #### End hack
 
-            #self.ds = xr.concat(self.ekmg.worker_data, dim='category')
+            self.ds = xr.concat(self.ekmg.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
             r0 = self.ds['range'].values[1]
