@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
-
 from Logger import Logger as Log
 from reportgeneration.EKMaskedGridder import EKMaskedGridder
 
@@ -13,6 +12,7 @@ class Reportgenerator:
 
     def __init__(self,grid_fname=None, pred_fname=None,bot_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
         Log().info('####### Reportgenerator ########')
+        xr.set_options(file_cache_maxsize=1)
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
         if bot_fname is None:
@@ -70,6 +70,7 @@ class Reportgenerator:
                 encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
 
                 Log().info(f'Writing gridded data to : {fname}')
+                #self.ds.compute()                                   # Crash for large dataset 150GB
                 self.ds.to_zarr(fname, mode='w', encoding=encoding) # Crash for large dataset 150GB
                 #self.ds.to_dataframe().netcdf(fname + '.csv')        # Crash for large dataset 150GB
                 #self.ds.to_dataframe().to_csv(fname + '.csv')       # Crash for large dataset 150GB
