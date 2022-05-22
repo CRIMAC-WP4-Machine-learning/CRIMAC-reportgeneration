@@ -100,9 +100,6 @@ class Reportgenerator:
 
         elif file_ext == '.png':
 
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
-
             self.getGridd()
 
             vmax = -20
