@@ -154,6 +154,8 @@ class DockerMain :
         if self.write_png is not None:
             rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
 
+        rg.cleanup()
+
 
 
 if __name__ == '__main__':

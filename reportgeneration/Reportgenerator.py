@@ -1,4 +1,5 @@
 import xarray as xr
+import shutil
 from numcodecs import Blosc
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +13,8 @@ class Reportgenerator:
 
     def __init__(self,grid_fname=None, pred_fname=None,bot_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
         Log().info('####### Reportgenerator ########')
-        xr.set_options(file_cache_maxsize=1)
+        self.out_fname = out_fname
+        self.tmp_path_name = None
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_pred = xr.open_zarr(pred_fname)
         if bot_fname is None:
@@ -43,7 +45,27 @@ class Reportgenerator:
     def getGridd(self):
 
         if self.ds is None:
-            self.ds = xr.concat(self.ekmg.worker_data, dim='category')
+
+            # Hack to avoid crash when we save final grid
+            self.tmp_path_name = str(Path(self.out_fname).parent) + os.sep + '__tmp_main_out'
+            if not os.path.exists(self.tmp_path_name):
+                os.makedirs(self.tmp_path_name)
+
+            fnames = []
+            for d in self.ekmg.worker_data:
+                fname = self.tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
+                fnames.append(fname)
+                d.to_zarr(fnames[-1], mode='w')
+
+            dl=[]
+            for fname in fnames:
+                d = xr.open_zarr(fname)
+                dl.append(d)
+
+            self.ds = xr.concat(dl, dim='category')
+            #### End hack
+
+            #self.ds = xr.concat(self.ekmg.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
             r0 = self.ds['range'].values[1]
@@ -120,6 +142,12 @@ class Reportgenerator:
                 plt.close()
         else:
             Log().error('{} format not supported'.format(fname[-4:]))
+
+    def cleanup(self):
+        if os.path.exists(self.tmp_path_name):
+            shutil.rmtree(self.tmp_path_name)
+
+
 """
 python Reportgenerator.py \
     --data S2019847_0511_sv.zarr
@@ -189,3 +217,5 @@ if __name__ == "__main__":
             os.makedirs(dstDir)
         plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
         plt.close()
+
+    rg.cleanup()
