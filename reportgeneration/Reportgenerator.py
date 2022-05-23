@@ -25,6 +25,7 @@ class Reportgenerator:
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
+            Log().info('Existing file found, trying to append')
             self.has_out_file = True
             zarr_out = xr.open_zarr(out_fname)
             start_time = zarr_out['ping_time'].values[-1]
@@ -44,7 +45,7 @@ class Reportgenerator:
 
     def getGridd(self):
 
-        if self.ds is None:
+        if self.ds is None and self.ekmg.worker_data is not None:
 
             # Hack to avoid crash when we save final grid
             # Store grid for each category
@@ -85,8 +86,10 @@ class Reportgenerator:
         file_path, file_ext = os.path.splitext(fname)
         file_ext = file_ext.lower()
 
+        if self.getGridd() is None:
+            return
+
         if file_ext == '.zarr':
-            self.getGridd()
             if self.has_out_file:
                 self.ds.to_zarr(fname, mode='a',append_dim='ping_time')
             else:
@@ -103,8 +106,6 @@ class Reportgenerator:
                 Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
-
-            self.getGridd()
 
             vmax = -20
             vmin = -80
@@ -145,7 +146,7 @@ class Reportgenerator:
             Log().error('{} format not supported'.format(fname[-4:]))
 
     def cleanup(self):
-        if os.path.exists(self.tmp_path_name):
+        if self.tmp_path_name is not None and os.path.exists(self.tmp_path_name):
             shutil.rmtree(self.tmp_path_name)
 
 
@@ -203,20 +204,20 @@ if __name__ == "__main__":
     rg.save(args.img)
 
     gridd = rg.getGridd()
+    if gridd is not None:
+        dstDir = str(Path(args.out).parent)
+        for cat in gridd['category']:
+            Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
+            sv = gridd.sel(category=cat.values)['sv']
+            if 'range' in gridd.coords._names:
+                sum_sv = sv.sum(dim='range')
+            elif 'depth' in gridd.coords._names:
+                sum_sv = sv.sum(dim='depth')
 
-    dstDir = str(Path(args.out).parent)
-    for cat in gridd['category']:
-        Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
-        sv = gridd.sel(category=cat.values)['sv']
-        if 'range' in gridd.coords._names:
-            sum_sv = sv.sum(dim='range')
-        elif 'depth' in gridd.coords._names:
-            sum_sv = sv.sum(dim='depth')
-
-        sum_sv.plot()
-        if not os.path.exists(dstDir):
-            os.makedirs(dstDir)
-        plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
-        plt.close()
+            sum_sv.plot()
+            if not os.path.exists(dstDir):
+                os.makedirs(dstDir)
+            plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
+            plt.close()
 
     rg.cleanup()

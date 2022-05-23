@@ -13,6 +13,7 @@ class EKMaskedGridder:
         self.worker_data = []
         self.vtype = vtype
 
+
         for cat in pred["annotation"]["category"]:
             Log().info(f'Gridding category: {cat.values.flatten()[0]}')
 
@@ -33,8 +34,12 @@ class EKMaskedGridder:
                 masked_sv = fdata * mask
 
             masked_sv = masked_sv.assign_coords(distance=fdata.distance)
-
-            rg = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range).regrid()
+            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range)
+            if ekgridder.target_h_bins.shape[0] <= 2:
+                self.worker_data = None
+                Log().info('Not enough data to make a grid.')
+                break
+            rg = ekgridder.regrid()
             rg = rg.assign_coords(category=[cat])
             # Insert metadata
             # https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-data-organisation
