@@ -1,5 +1,8 @@
 # Meta data requirements
 
+# Meta data from the CONAR-netCDF convention
+
+## Root level
 
 Attributes
 
@@ -119,18 +122,21 @@ float integrated_backscatter(ping_axis, range_axis, frequency) |M |Integrated ba
 :units = "as appropriate" |Use units appropriate for the data.
 
 # Requirements from ICES acoustic db format
-  | Data | LogDistance | Traveled distance of integrator cell from start of cruise in nautical miles | 
-  | Data | LogTime | Time of the first ping in the integrator cell in ISO 8601 | 
-  | Data | LogLatitude | Latitude position in decimal degrees of the first ping in integrator cell |
-  | Data | LogLongitude | Longitude position in decimall degrees of the first ping in integrator cell | 
-  | Data | LogOrigin | use "start" to indicate LogLatitude and LogLongitude is the first ping | 
-  | Data | LogLatitude2 | Latitude position in decimal degrees of the last ping in integrator cell |
-  | Data | LogLongitude2 | Longitude position in decimall degrees of the last ping in integrator cell | 
-  | Data | LogOrigin2 | use "start" to indicate LogLatitude and LogLongitude is the last ping | 
-  | Data | SampleChannelDepthUpper | Upper depth of the integrator cell in meters relative surface | 
-  | Data | SampleChannelDepthLower | Lower depth of the integrator cell in meters relative surface | 
-  | Data | PingAxisInterval | Value of the horizontal size of the integrator | 
-  | Data | PingAxisIntervalType | Indicating the unit of the PingAxisInterval, i.e. distance(nmi), ping, or time (seconds) | 
+
+| Level | Variable | zarr-variable | Comment | 
+| -| -| -| -|
+  | Data | LogDistance | Traveled distance of integrator cell from start of cruise in nautical miles | Not in SONAR-nerCDF4
+  | Data | LogTime | Time of the first ping in the integrator cell in ISO 8601 | SONAR-netCDF4 has mean time in grid
+  | Data | LogLatitude | Latitude position in decimal degrees of the first ping in integrator cell | Not directly supoprte in SONAR-netCDF4
+  | Data | LogLongitude | Longitude position in decimall degrees of the first ping in integrator cell | Not directly supoprte in SONAR-netCDF4
+  | Data | LogOrigin | use "start" to indicate LogLatitude and LogLongitude is the first ping | Not supported in SONAR-netCDF4
+  | Data | LogLatitude2 | Latitude position in decimal degrees of the last ping in integrator cell | Not directly supported  in SONAR-netCDF4
+  | Data | LogLongitude2 | Longitude position in decimall degrees of the last ping in integrator cell | Not directly supported  in SONAR-netCDF4
+  | Data | LogOrigin2 | use "start" to indicate LogLatitude and LogLongitude is the last ping | should this be "end"?
+  | Data | SampleChannelDepthUpper | Upper depth of the integrator cell in meters relative surface | SONAR-NetCDF4 assumes start at 0 m
+  | Data | SampleChannelDepthLower | Lower depth of the integrator cell in meters relative surface | SONAR-NetCDF4 assumes start at 0 m
+  | Data | PingAxisInterval | Value of the horizontal size of the integrator | ok
+  | Data | PingAxisIntervalType | Indicating the unit of the PingAxisInterval, i.e. distance(nmi), ping, or time (seconds) | ok
   | Data | SampleSvThreshold | The lowest Sv threshold used when integrating | 
   | Data | DataSaCategory | Indicating the acoustic cathegory, i.e. HER for Herring | 
   | Data | DataUnit | Indicating the unit of the integrated value in the cell, i.e. m2nmi-2 (sA) | 
