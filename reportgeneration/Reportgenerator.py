@@ -7,6 +7,7 @@ import matplotlib.dates as mdates
 import os
 from Logger import Logger as Log
 from reportgeneration.EKMaskedGridder import EKMaskedGridder
+from pathlib import Path
 
 
 class Reportgenerator:
@@ -167,7 +168,6 @@ python Reportgenerator.py \
 
 if __name__ == "__main__":
     import argparse
-    from pathlib import Path
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, help="Acoustic Sv data")
