@@ -55,7 +55,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
     ```bash
     --env VERT_INTEGRATION_TYPE=range
 
-    --env VERT_INTEGRATION_TYPE=depth # Not implemented in version 1
+    --env VERT_INTEGRATION_TYPE=depth
 
     ```
 
