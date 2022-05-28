@@ -43,8 +43,7 @@ class Reportgenerator:
         else:
             Log().info('Starting new outputfile')
 
-
-        #self.extractBottomDepth(zarr_bot)
+        bottomRange = self.extractRangeToBottom(zarr_bot)
 
         self.worker_data = []
 
@@ -52,7 +51,9 @@ class Reportgenerator:
             masked_sv = self.applyMask(zarr_grid, zarr_pred, cat=cat, freq=38000)
 
             if vtype == 'depth':
-                self.rangeToDepthCorrection(masked_sv)
+                masked_sv = self.rangeToDepthCorrection(masked_sv)
+                # Range is now depth
+                masked_sv['range'] = masked_sv['range'] + masked_sv['transducer_draft'][0].values
 
             ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range)
             if ekgridder.target_h_bins.shape[0] <= 2:
@@ -63,25 +64,59 @@ class Reportgenerator:
             Log().info(f'Gridding category: {cat.values.flatten()[0]}')
             rg = ekgridder.regrid()
 
+            if vtype == 'depth':
+                rg = rg.rename({'range': 'depth'})
+
             rg = rg.assign_coords(category=[cat])
 
             self.worker_data.append(rg)
 
-
         self.ds = None
 
+
     def rangeToDepthCorrection(self, masked_sv):
-        print()
-        # masked_sv.heave[0,0:1000].values+masked_sv.transducer_draft[0,0:1000].values
-        pass
 
-    def extractBottomDepth(self, bot):
-        print()
+        dr = masked_sv['range'].diff('range')[0].values
+        ridx = (masked_sv['transducer_draft']+masked_sv['heave'])/dr
+        ridx = xr.DataArray.round(ridx).astype(int).data
 
+        """
+        # Debug check echogram before heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000,:].transpose().values + 10e-20), vmin=-80,vmax=-20, origin='upper')
+        plt.axis('auto')
+        """
+
+        for offset in np.unique(ridx.compute()):
+            colidx = dask.array.argwhere(ridx == offset)
+            colidx = colidx.compute().flatten()
+            masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
+
+        """
+        # Debug check echogram after heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000, :].transpose().values + 10e-20), vmin=-80, vmax=-20,
+                   origin='upper')
+        plt.axis('auto')
+        plt.show()
+        """
+        return masked_sv
+
+    def extractRangeToBottom(self, bot):
+
+        # Replace nan with 0, bottom and subbottom is 1
         bot['bottom_range'] = xr.where(bot['bottom_range'].isnull(), 0, 1)
+
+        # Diff in range direction gives 1 at bottom
         bot_ = bot['bottom_range'].diff(dim='range')
-        bot_.isel(ping_time=slice(0, 1)).values
-        pass
+
+        # Find index of bottom
+        botIdx = bot_.data.argmax(1)
+
+        # Find range to bottom
+        range = bot_['range'].isel(range=botIdx)
+
+        return range
 
     def applyMask(self, data=None, pred=None, cat=None, freq=38000):
 
@@ -135,9 +170,9 @@ class Reportgenerator:
             self.ds = xr.concat(self.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
-            r0 = self.ds['range'].values[1]
-            r1 = self.ds['range'].values[-2]
-            self.ds = self.ds.sel(range=slice(r0, r1))
+            r0 = self.ds[self.vtype].values[1]
+            r1 = self.ds[self.vtype].values[-2]
+            self.ds = self.ds.sel({self.vtype:slice(r0, r1)})
 
             self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time']) - 1))
 
@@ -182,7 +217,7 @@ class Reportgenerator:
                 # Set axis limits
                 x_lims = mdates.date2num(data['ping_time'].values)
 
-                extent = [x_lims[0], x_lims[-1].astype(float), data['range'].values[-1], data['range'].values[0]]
+                extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1], data[self.vtype].values[0]]
 
                 im = plt.gca().imshow(10 * np.log10(data['sv'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 

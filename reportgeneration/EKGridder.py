@@ -14,11 +14,17 @@ class EKGridder(XGridder):
         self.distance = None
 
         # Limit range according to max_range
+        """
+        if 'depth' in data.coords:
+            data = data.sel(depth=slice(0, max_range))
+        else:
+            data = data.sel(range=slice(0, max_range))
+        """
         data = data.sel(range=slice(0, max_range))
 
         source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step)
         source_h_bins, target_h_bins = self.calckBins(data, h_integration_type, h_step)
-        super().__init__(target_v_bins,source_v_bins, target_h_bins, source_h_bins)
+        super().__init__(target_v_bins, source_v_bins, target_h_bins, source_h_bins)
         self.h_integration_type = h_integration_type
         self.data = data
         self.max_range = max_range
@@ -77,9 +83,9 @@ class EKGridder(XGridder):
             sbins = data['range']
             tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
         elif _type == 'depth':
-            # Maby use some calculations from  : https://www.researchgate.net/profile/Nils-Olav-Handegard/publication/7502150_Tracking_individual_fish_from_a_moving-platform_using_a_split-beam_transducer/links/0fcfd50b4768fad718000000/Tracking-individual-fish-from-a-moving-platform-using-a-split-beam-transducer.pdf
-            # pp 2222, Equation between B3 and B4
-            Log().error('depth as vertical integrator binning not implemented')
+            # Range is converted to depth in Reportgenerator
+            sbins = data['range']
+            tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
 
 
         else:
@@ -107,6 +113,7 @@ class EKGridder(XGridder):
 
         # Regrid axis
         data = data.sel(range=slice(0, 0))  # We dont ned values in range anymore
+
         data = data.interp(ping_time=self.ping_time)
 
         # Form correct data cars and coordinates on final grid
