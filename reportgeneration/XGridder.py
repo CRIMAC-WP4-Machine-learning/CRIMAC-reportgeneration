@@ -18,7 +18,6 @@ class XGridder(NPGridder):
         # Regridd
 
         data_mod = dask.array.vstack((data, np.zeros(data.shape[1])))
-        #data_mod = np.vstack((data, np.zeros(data.shape[1])))
 
         return np.dot(W, data_mod)
 
