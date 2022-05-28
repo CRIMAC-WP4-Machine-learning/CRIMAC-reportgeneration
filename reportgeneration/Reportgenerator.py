@@ -107,9 +107,8 @@ class Reportgenerator:
         plt.show()
         """
         with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-            masked_sv = fdata['sv'].data * mask.data#fdata['sv'] * mask
+            masked_sv = fdata['sv'].data * mask.data
 
-        #masked_sv = masked_sv.assign_coords(distance=fdata.distance)
         fdata['sv'].data = masked_sv
         return fdata
 
