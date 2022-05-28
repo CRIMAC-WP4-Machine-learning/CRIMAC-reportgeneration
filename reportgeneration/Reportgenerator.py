@@ -44,10 +44,12 @@ class Reportgenerator:
             Log().info('Starting new outputfile')
 
 
+        #self.extractBottomDepth(zarr_bot)
+
         self.worker_data = []
 
         for cat in zarr_pred["annotation"]["category"]:
-            masked_sv = self.applyMask_(zarr_grid, zarr_pred, zarr_bot, cat=cat, freq=38000)
+            masked_sv = self.applyMask(zarr_grid, zarr_pred, cat=cat, freq=38000)
 
             if vtype == 'depth':
                 self.rangeToDepthCorrection(masked_sv)
@@ -65,25 +67,7 @@ class Reportgenerator:
 
             self.worker_data.append(rg)
 
-        """
-        for cat, masked_sv in masked:
 
-            if vtype == 'depth':
-                self.rangeToDepthCorrection(masked_sv)
-
-            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range)
-            if ekgridder.target_h_bins.shape[0] <= 2:
-                self.worker_data = None
-                Log().info('Not enough data to make a grid.')
-                break
-
-            rg = ekgridder.regrid()
-
-
-            rg = rg.assign_coords(category=[cat])
-
-            self.worker_data.append(rg)
-        """
         self.ds = None
 
     def rangeToDepthCorrection(self, masked_sv):
@@ -91,7 +75,15 @@ class Reportgenerator:
         # masked_sv.heave[0,0:1000].values+masked_sv.transducer_draft[0,0:1000].values
         pass
 
-    def applyMask_(self, data=None, pred=None, bot=None,cat=None, freq=38000):
+    def extractBottomDepth(self, bot):
+        print()
+
+        bot['bottom_range'] = xr.where(bot['bottom_range'].isnull(), 0, 1)
+        bot_ = bot['bottom_range'].diff(dim='range')
+        bot_.isel(ping_time=slice(0, 1)).values
+        pass
+
+    def applyMask(self, data=None, pred=None, cat=None, freq=38000):
 
         fdata = data.sel(frequency=freq)
 
@@ -111,35 +103,6 @@ class Reportgenerator:
 
         fdata['sv'].data = masked_sv
         return fdata
-
-
-    def applyMask(self, data=None, pred=None,bot=None,freq=38000):
-
-        self.masked = []
-        for cat in pred["annotation"]["category"]:
-            Log().info(f'Gridding category: {cat.values.flatten()[0]}')
-
-            fdata = data.sel(frequency=freq)
-
-            mask = pred["annotation"].sel(category=cat.values)
-            if cat.values.flatten()[0] < 0:
-                mask = xr.where(mask < 0, 1,mask)
-
-            mask = mask.transpose('ping_time', 'range')
-            """
-            import matplotlib.pylab as plt
-            plt.imshow(mask[::200, :].values.astype(float))
-            plt.axis('auto')
-            plt.show()
-            """
-            with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-                masked_sv = fdata['sv'] * mask
-
-            masked_sv = masked_sv.assign_coords(distance=fdata.distance)
-
-            self.masked.append((cat, masked_sv))
-
-        return self.masked
 
 
     def getGridd(self):
