@@ -103,24 +103,20 @@ class EKGridder(XGridder):
             data = self.data
 
         sv_s = data.fillna(0).squeeze()
-        gdata = super().regrid(sv_s)
+        gdata = super().regrid(sv_s['sv'])
 
+        # Regrid axis
         data = data.sel(range=slice(0, 0))  # We dont ned values in range anymore
         data = data.interp(ping_time=self.ping_time)
 
-        gdata = dask.array.expand_dims(gdata,axis=0)
-        ds = xr.Dataset(
-            data_vars=dict(sv=(['category','ping_time', 'range'], gdata)),
-            coords=dict(
-                frequency=data['frequency'].values,
-                range=self.target_v_bins.values,
-                ping_time=data['ping_time'].values,
-                distance=('ping_time', data['distance'].values),
-                latitude=('ping_time', data['latitude'].values),
-                longitude=('ping_time', data['longitude'].values),
-                channel_id=data['channel_id'].values
-            )
-        )
+        # Form correct data cars and coordinates on final grid
+        data = data.drop(['range', 'sv'])
+        data = data.assign_coords(range = self.target_v_bins.values)
+        gdata = dask.array.expand_dims(gdata, axis=0)
+
+        ds = xr.Dataset(data_vars=data.data_vars, coords=data.coords)
+        ds = ds.assign(sv=(['category', 'ping_time', 'range'], gdata))
+
         return ds
 
 
