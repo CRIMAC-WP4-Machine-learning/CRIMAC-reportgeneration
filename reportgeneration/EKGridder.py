@@ -103,7 +103,7 @@ class EKGridder(XGridder):
             data = self.data
 
         sv_s = data.fillna(0).squeeze()
-        gdata = super().regrid(sv_s['sv'])
+        gdata = super().regrid(sv_s)
 
         data = data.sel(range=slice(0, 0))  # We dont ned values in range anymore
         data = data.interp(ping_time=self.ping_time)
