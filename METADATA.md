@@ -148,15 +148,15 @@ The minimum data/metadata for the to be accepted by, e.g., StoX are:
 
 | Level | Variable | zarr-variable | Comment | 
 | -| -| -| -|
-| distance | log_start | distance |  |
-| distance | start_time | ping_time |  |
-| distance | stop_time | ping_time |  |
-| distance | integrator_dist |  | Settiing in the integrator  |
-| distance | pel_ch_thickness |  | Settiing in the integrator  |
-| distance | lat_start | latitude |  |
-| distance | lat_stop | latitude |  |
-| distance | lon_start | longitude |  |
-| distance | lon_stop | longitude |  |
+| distance | log_start | distance |  Specify how to calculate|
+| distance | start_time | ping_time | Specify how to calculate |
+| distance | stop_time | ping_time |  Specify how to calculate|
+| distance | integrator_dist |  | Settiing in the integrator. Specify how to calculate  |
+| distance | pel_ch_thickness |  | Settiing in the integrator. Specify how to calculate  |
+| distance | lat_start | latitude | Specify how to calculate |
+| distance | lat_stop | latitude |  Specify how to calculate|
+| distance | lon_start | longitude | Specify how to calculate |
+| distance | lon_stop | longitude |  Specify how to calculate|
 | frequency | freq | frequency |  |
 | frequency | transceiver | frequency | 1 : number of frequencies |
 | frequency | upper_integrator_depth | heave + transducer_draft | Check with LSSS |
