@@ -196,16 +196,27 @@ We will refactor our code to provide these attributes, types, dimensions and var
 ## Global attributes
 
 :Conventions = "CF-1.7, SONAR-netCDF4-2.0, ACDD-1.3"
+
 :date_created = Timestamp of file creation in ISO8601:2004  (e.g. 2017-05-06T20:21:35Z)
+
 :keywords = "EK60" or "EK80"
+
 :sonar_convention_authority = "ICES"
+
 :sonar_convention_name = "SONAR-netCDF4"
+
 :sonar_convention_version = "2.0"
+
 :summary = IMR cruise series
+
 :title = IMR cruise number
+
 :conversion_software_name = "CRIMAC reportgenerator, CRIMAC preprocessor, pyecholab"
+
 :conversion_software_version = "??, CRIMAC preprocessor 0.2, conda_version_20220419"
+
 :history =  "2019-09-07T15:50+00Z File conversion by CRIMAC preprocessor
+
 	         2019-09-07T15:50+00Z File conversion by CRIMAC reportgenerator"
 
 ## Dimensions
@@ -223,56 +234,56 @@ range_axis : Number of cells in range dimension.
 
 ## Variables and associated attributes
 
-channel_id -> string beam(beam)
+### channel_id -> string beam(beam)
 
 :long_name = "Beam name" 
 
 
-main_frequency -> float frequency(frequency) 
+### main_frequency -> float frequency(frequency) 
 
 :long_name = "Frequency of the receive echo from spectral analysis of the FM pulse or frequency of the CW pulse." 
 
 :units = "Hz" 
 
 
-category -> int category(category)
+### category -> int category(category)
 
 :long_name = "Acoustic category"
 
 
-hitype -> ping_axis_interval_type = 1  {Time_seconds = 0, Distance_nautical_miles = 1, Distance_meters = 2, Number_of_ping = 3}
+### hitype -> ping_axis_interval_type = 1  {Time_seconds = 0, Distance_nautical_miles = 1, Distance_meters = 2, Number_of_ping = 3}
 
 :long_name = "Interval type for regridding the data in ping axis" 
 
 
-histep -> float ping_axis_interval_value
+### histep -> float ping_axis_interval_value
 
 :long_name = "Ping axis interval for regridding the data" 
 
 
-vitype -> range_axis_interval_type = 1 for depth {Range = 0, Depth = 1}
+### vitype -> range_axis_interval_type = 1 for depth {Range = 0, Depth = 1}
 
 :long_name = "Interval type for regridding the data in range axis" 
 
 
-vistep -> float range_axis_interval_value
+### vistep -> float range_axis_interval_value
 
 :long_name = "Range axis interval for regridding the data" 
 
 
-backscatter_type(frequency) = 1 {Sv = 0, Sa = 1}
+### backscatter_type(frequency) = 1 {Sv = 0, Sa = 1}
 
 :long_name = "Backscatter type for gridded data" 
 
 
-sv -> float integrated_backscatter(ping_axis, range_axis, frequency) |M |Integrated backscatter measurement.
+### sv -> float integrated_backscatter(ping_axis, range_axis, frequency) |M |Integrated backscatter measurement.
 
 :long_name = "Integrated backscatter of the raw backscatter measurements sampled in this cell for each frequency." 
 
 :units = "as appropriate" |Use units appropriate for the data.
 
 
-uint64 cell_ping_time_start(ping_axis) |M |Timestamp at start of the pings contributing to the cell. NB: Need to propose change to SONAR-netcdf4
+### uint64 cell_ping_time_start(ping_axis) |M |Timestamp at start of the pings contributing to the cell. NB: Need to propose change to SONAR-netcdf4
 
 :axis = "T" 
 
@@ -285,7 +296,7 @@ uint64 cell_ping_time_start(ping_axis) |M |Timestamp at start of the pings contr
 :units = "nanoseconds since 1970-01-01 00:00:00Z" or "nanoseconds since 1601-01-01 00:00:00Z" 
 
 
-uint64 cell_ping_time_stop(ping_axis) |M |Timestamp at end of the pings contributing to the cell. NB: Need to propose change to SONAR-netcdf4
+### uint64 cell_ping_time_stop(ping_axis) |M |Timestamp at end of the pings contributing to the cell. NB: Need to propose change to SONAR-netcdf4
 
 :axis = "T" 
 
@@ -298,7 +309,7 @@ uint64 cell_ping_time_stop(ping_axis) |M |Timestamp at end of the pings contribu
 :units = "nanoseconds since 1970-01-01 00:00:00Z" or "nanoseconds since 1601-01-01 00:00:00Z" 
 
 
-uint64 cell_lat_start(ping_axis) |M |Latitude at start of the pings contributing to the cell.
+### uint64 cell_lat_start(ping_axis) |M |Latitude at start of the pings contributing to the cell.
 
 double :valid_range = −90.0, 90.0
 
@@ -311,7 +322,7 @@ double :valid_range = −90.0, 90.0
 :coordinates = "time latitude longitude"
 
 
-uint64 cell_lat_end(ping_axis) |M |Latitude at end of the pings contributing to the cell.
+### uint64 cell_lat_end(ping_axis) |M |Latitude at end of the pings contributing to the cell.
 
 double :valid_range = −90.0, 90.0
 
@@ -324,7 +335,7 @@ double :valid_range = −90.0, 90.0
 :coordinates = "time latitude longitude"
 
 
-uint64 cell_lon_start(ping_axis) |M |Longitude at start of the pings contributing to the cell
+### uint64 cell_lon_start(ping_axis) |M |Longitude at start of the pings contributing to the cell
 
 double :valid_range = -180.0, 180.0
 
@@ -337,7 +348,7 @@ double :valid_range = -180.0, 180.0
 :coordinates = "time latitude longitude"
 
 
-uint64 cell_lon_end(ping_axis) |M |Longitude at end of the pings contributing to the cell
+### uint64 cell_lon_end(ping_axis) |M |Longitude at end of the pings contributing to the cell
 
 double :valid_range = -180.0, 180.0
 
