@@ -187,7 +187,7 @@ The minimum data/metadata for the to be accepted by, e.g., StoX are:
 | ch_type | type | "P" |  |
 | sa_by_acocat | acocat | category |  |
 | sa | ch | channel_id |  |
-| sa | ca | sv | Integrated |
+| sa | sa | sv | Integrated |
 
 # Refactoring
 
