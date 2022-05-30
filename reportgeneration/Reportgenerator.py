@@ -5,8 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
+import dask
 from Logger import Logger as Log
-from reportgeneration.EKMaskedGridder import EKMaskedGridder
+from reportgeneration.EKGridder import EKGridder
 from pathlib import Path
 
 
@@ -14,9 +15,11 @@ class Reportgenerator:
 
     def __init__(self,grid_fname=None, pred_fname=None,bot_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
         Log().info('####### Reportgenerator ########')
+        self.vtype = vtype
         self.out_fname = out_fname
         self.tmp_path_name = None
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
+        zarr_grid = zarr_grid.drop_vars(['angle_alongship', 'angle_athwartship'])
         zarr_pred = xr.open_zarr(pred_fname)
         if bot_fname is None:
             zarr_bot = None
@@ -40,13 +43,108 @@ class Reportgenerator:
         else:
             Log().info('Starting new outputfile')
 
-        self.ekmg = EKMaskedGridder(zarr_grid, zarr_pred, zarr_bot, freq, threshold, vtype, vstep, htype, hstep, max_range)
+        bottomRange = self.extractRangeToBottom(zarr_bot)
+
+        self.worker_data = []
+
+        for cat in zarr_pred["annotation"]["category"]:
+            masked_sv = self.applyMask(zarr_grid, zarr_pred, cat=cat, freq=38000)
+
+            if vtype == 'depth':
+                masked_sv = self.rangeToDepthCorrection(masked_sv)
+                # Range is now depth
+                masked_sv['range'] = masked_sv['range'] + masked_sv['transducer_draft'][0].values
+
+            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range)
+            if ekgridder.target_h_bins.shape[0] <= 2:
+                self.worker_data = None
+                Log().info('Not enough data to make a grid.')
+                break
+
+            Log().info(f'Gridding category: {cat.values.flatten()[0]}')
+            rg = ekgridder.regrid()
+
+            if vtype == 'depth':
+                rg = rg.rename({'range': 'depth'})
+
+            rg = rg.assign_coords(category=[cat])
+
+            self.worker_data.append(rg)
 
         self.ds = None
 
+
+    def rangeToDepthCorrection(self, masked_sv):
+
+        dr = masked_sv['range'].diff('range')[0].values
+        ridx = (masked_sv['transducer_draft']+masked_sv['heave'])/dr
+        ridx = xr.DataArray.round(ridx).astype(int).data
+
+        """
+        # Debug check echogram before heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000,:].transpose().values + 10e-20), vmin=-80,vmax=-20, origin='upper')
+        plt.axis('auto')
+        """
+
+        for offset in np.unique(ridx.compute()):
+            colidx = dask.array.argwhere(ridx == offset)
+            colidx = colidx.compute().flatten()
+
+            # This is a bottleneck. How to speed up?
+            masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
+
+        """
+        # Debug check echogram after heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000, :].transpose().values + 10e-20), vmin=-80, vmax=-20,
+                   origin='upper')
+        plt.axis('auto')
+        plt.show()
+        """
+        return masked_sv
+
+    def extractRangeToBottom(self, bot):
+
+        # Replace nan with 0, bottom and subbottom is 1
+        bot['bottom_range'] = xr.where(bot['bottom_range'].isnull(), 0, 1)
+
+        # Diff in range direction gives 1 at bottom
+        bot_ = bot['bottom_range'].diff(dim='range')
+
+        # Find index of bottom
+        botIdx = bot_.data.argmax(1)
+
+        # Find range to bottom
+        range = bot_['range'].isel(range=botIdx)
+
+        return range
+
+    def applyMask(self, data=None, pred=None, cat=None, freq=38000):
+
+        fdata = data.sel(frequency=freq)
+
+        mask = pred["annotation"].sel(category=cat.values)
+        if cat.values.flatten()[0] < 0:
+            mask = xr.where(mask < 0, 1, mask)
+
+        mask = mask.transpose('ping_time', 'range')
+        """
+        import matplotlib.pylab as plt
+        plt.imshow(mask[::200, :].values.astype(float))
+        plt.axis('auto')
+        plt.show()
+        """
+        with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+            masked_sv = fdata['sv'].data * mask.data
+
+        fdata['sv'].data = masked_sv
+        return fdata
+
+
     def getGridd(self):
 
-        if self.ds is None and self.ekmg.worker_data is not None:
+        if self.ds is None and self.worker_data is not None:
 
             # Hack to avoid crash when we save final grid
             # Store grid for each category
@@ -59,24 +157,24 @@ class Reportgenerator:
 
             # Store each category
             fnames = []
-            for d in self.ekmg.worker_data:
+            for d in self.worker_data:
                 fname = self.tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
                 fnames.append(fname)
                 d.to_zarr(fnames[-1], mode='w')
 
             # Reload and concatinate
-            self.ekmg.worker_data = []
+            self.worker_data = []
             for fname in fnames:
                 d = xr.open_zarr(fname)
-                self.ekmg.worker_data.append(d)
+                self.worker_data.append(d)
             #### End hack
 
-            self.ds = xr.concat(self.ekmg.worker_data, dim='category')
+            self.ds = xr.concat(self.worker_data, dim='category')
 
             # Assume first bin in range is nan and last bin in range do not contain data from whole bin
-            r0 = self.ds['range'].values[1]
-            r1 = self.ds['range'].values[-2]
-            self.ds = self.ds.sel(range=slice(r0, r1))
+            r0 = self.ds[self.vtype].values[1]
+            r1 = self.ds[self.vtype].values[-2]
+            self.ds = self.ds.sel({self.vtype:slice(r0, r1)})
 
             self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time']) - 1))
 
@@ -121,11 +219,11 @@ class Reportgenerator:
                 # Set axis limits
                 x_lims = mdates.date2num(data['ping_time'].values)
 
-                extent = [x_lims[0], x_lims[-1].astype(float), data['range'].values[-1], data['range'].values[0]]
+                extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1], data[self.vtype].values[0]]
 
                 im = plt.gca().imshow(10 * np.log10(data['sv'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 
-                plt.ylabel('Sv {}(m)'.format(self.ekmg.vtype))
+                plt.ylabel('Sv {}(m)'.format(self.vtype))
 
                 # Format time axis
                 locator = mdates.AutoDateLocator(minticks=3, maxticks=20)
