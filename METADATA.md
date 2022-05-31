@@ -146,30 +146,35 @@ float integrated_backscatter(ping_axis, range_axis, frequency) |M |Integrated ba
 :units = "as appropriate" |Use units appropriate for the data.
 
 
-# Requirements from ICES acoustic db format
-
+# Minimum requirements for the ICESAcoustic-format to be used in StoX
 | Level | Variable | zarr-variable | Comment | 
 | -| -| -| -|
-  | Data | LogDistance | Traveled distance of integrator cell from start of cruise in nautical miles | Not in SONAR-nerCDF4
-  | Data | LogTime | Time of the first ping in the integrator cell in ISO 8601 | SONAR-netCDF4 has mean time in grid
-  | Data | LogLatitude | Latitude position in decimal degrees of the first ping in integrator cell | Not directly supoprte in SONAR-netCDF4
-  | Data | LogLongitude | Longitude position in decimall degrees of the first ping in integrator cell | Not directly supoprte in SONAR-netCDF4
-  | Data | LogOrigin | use "start" to indicate LogLatitude and LogLongitude is the first ping | Not supported in SONAR-netCDF4
-  | Data | LogLatitude2 | Latitude position in decimal degrees of the last ping in integrator cell | Not directly supported  in SONAR-netCDF4
-  | Data | LogLongitude2 | Longitude position in decimall degrees of the last ping in integrator cell | Not directly supported  in SONAR-netCDF4
-  | Data | LogOrigin2 | use "start" to indicate LogLatitude and LogLongitude is the last ping | should this be "end"?
-  | Data | SampleChannelDepthUpper | Upper depth of the integrator cell in meters relative surface | SONAR-NetCDF4 assumes start at 0 m
-  | Data | SampleChannelDepthLower | Lower depth of the integrator cell in meters relative surface | SONAR-NetCDF4 assumes start at 0 m
-  | Data | PingAxisInterval | Value of the horizontal size of the integrator | ok
-  | Data | PingAxisIntervalType | Indicating the unit of the PingAxisInterval, i.e. distance(nmi), ping, or time (seconds) | ok
-  | Data | SampleSvThreshold | The lowest Sv threshold used when integrating | 
-  | Data | DataSaCategory | Indicating the acoustic cathegory, i.e. HER for Herring | 
-  | Data | DataUnit | Indicating the unit of the integrated value in the cell, i.e. m2nmi-2 (sA) | 
-  | Data | DataValue | The acoustic value from the integration of a cell | 
+  | Cruise | Platform | | |  
+  | Cruise | LocalID | | |  
+  | Log | LogDistance | distance | |  
+  | Log | LogTime | ping_time | |  
+  | Log | LogLatitude | latitude | |  
+  | Log | LogLongitude | longitude | |  
+  | Log | LogOrigin | "start" | |  
+  | Log | LogLatitude2 | latitude | |  
+  | Log | LogLongitude2 | longitude | |  
+  | Log | LogOrigin2 | "end" | |   
+  | Log | BottomDepth | | Do we have this in Rubens integrator? |
+  | Log | Validity | "V" | See http://vocab.ices.dk/?ref=1493 |
+  | Sample | ChannelDepthUpper |  | Upper depth of the integrator cell in meters relative surface |
+  | Sample | ChannelDepthLower |  | Lower depth of the integrator cell in meters relative surface |
+  | Sample | PingAxisInterval |  | Value of the horizontal size of the integrator |
+  | Sample | PingAxisIntervalType |  | "distance" or "ping", see http://vocab.ices.dk/?ref=1455 |
+  | Sample | PingAxisIntervalOrigin | "start" | Used by LSSS, see http://vocab.ices.dk/?ref=1457 |
+  | Sample | PingAxisIntervalUnit |  | "nmi" or "ping", see http://vocab.ices.dk/?ref=1456 |
+  | Sample | SvThreshold |  | The lowest Sv threshold used when integrating |
+  |  | InstrumentID | frequency |  |
+  | Data | SaCategory | category | Decide whether to use NMDEchosounder (e.g. 12 for herring) or ICESAcoustic categories (e.g. HER for Herring) |
+  | Data | Type | "C" | Used by LSSS, see http://vocab.ices.dk/?ref=1459 |
+  | Data | Unit | "m2nmi-2" | Used by LSSS, see http://vocab.ices.dk/?ref=1460 |
+  | Data | Value | sv | The integrated sv as sa |
 
-# Minimun requirements for StoX
-The minimum data/metadata for the to be accepted by, e.g., StoX are:
-
+# Minimun requirements for the NMDEchosounder-format to be used in StoX
 | Level | Variable | zarr-variable | Comment | 
 | -| -| -| -|
 | distance | log_start | distance |  Specify how to calculate|
@@ -183,7 +188,7 @@ The minimum data/metadata for the to be accepted by, e.g., StoX are:
 | distance | lon_stop | longitude |  Specify how to calculate|
 | frequency | freq | frequency |  |
 | frequency | transceiver | frequency | 1 : number of frequencies |
-| frequency | upper_integrator_depth | heave + transducer_draft | Check with LSSS |
+| frequency | upper_interpret_depth |  | Upper depth at which data are interpreted |
 | ch_type | type | "P" |  |
 | sa_by_acocat | acocat | category |  |
 | sa | ch | channel_id |  |
