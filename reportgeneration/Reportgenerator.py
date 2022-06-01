@@ -90,6 +90,8 @@ class Reportgenerator:
         for offset in np.unique(ridx.compute()):
             colidx = dask.array.argwhere(ridx == offset)
             colidx = colidx.compute().flatten()
+
+            # This is a bottleneck. How to speed up?
             masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
 
         """
