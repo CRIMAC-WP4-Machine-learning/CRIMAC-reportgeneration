@@ -151,14 +151,15 @@ float integrated_backscatter(ping_axis, range_axis, frequency) |M |Integrated ba
 | -| -| -| -|
   | Cruise | Platform | | |  
   | Cruise | LocalID | | |  
-  | Log | LogDistance | distance | |  
-  | Log | LogTime | ping_time | |  
-  | Log | LogLatitude | latitude | |  
-  | Log | LogLongitude | longitude | |  
-  | Log | LogOrigin | "start" | |  
-  | Log | LogLatitude2 | latitude | |  
-  | Log | LogLongitude2 | longitude | |  
-  | Log | LogOrigin2 | "end" | |   
+  | Log | Distance | distance | |  
+  | Log | Time | ping_time | Time of the first ping. Check with LSSS. |  
+  | Log | Latitude | latitude | |  
+  | Log | Longitude | longitude | |  
+  | Log | Origin | "start" | |  
+  |  | Time2 | ping_time | Added to support NMDEchosounder. Time of the first ping of the next log. Check with LSSS. |  
+  | Log | Latitude2 | latitude | |  
+  | Log | Longitude2 | longitude | |  
+  | Log | Origin2 | "end" | |   
   | Log | BottomDepth | | Do we have this in Rubens integrator? |
   | Log | Validity | "V" | See http://vocab.ices.dk/?ref=1493 |
   | Sample | ChannelDepthUpper |  | Upper depth of the integrator cell in meters relative surface |
