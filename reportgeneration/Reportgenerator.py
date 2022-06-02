@@ -160,7 +160,7 @@ class Reportgenerator:
             for d in self.worker_data:
                 fname = self.tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
                 fnames.append(fname)
-                d.to_zarr(fnames[-1], mode='w')
+                d.to_zarr(fnames[-1], mode='w',safe_chunks=False)
 
             # Reload and concatinate
             self.worker_data = []
