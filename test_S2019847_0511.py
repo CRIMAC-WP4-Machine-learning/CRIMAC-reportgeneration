@@ -20,7 +20,11 @@ report_file_name = data_dir + \
 LSSS_report_file_name = data_dir + \
                         '2019/S2019847_0511/ACOUSTIC/LSSS/Reports/ListUserFile20__L2887.0-3069.3.xml'
 
-# These are the parameters in the acoustic format
+#
+# Parameters
+#
+
+# Ping axis
 PingAxisIntervalType = "distance"  # see http://vocab.ices.dk/?ref=1455
 PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
 PingAxisIntervalUnit = "nmi"  # see http://vocab.ices.dk/?ref=1456
@@ -29,19 +33,29 @@ PingAxisInterval = 0.1
 hitype = PingAxisIntervalUnit
 histep = PingAxisInterval
 
-ChannelDepthIntervalStart = 0  # Integration start depth (not implemented)
-vistep = 10
-max_range = 500
+# Channel
+ChannelDepthStart = 0  # Integration start depth (not implemented)
+ChannelDepthEnd = 500
+ChannelThickness = 10
+ChannelType = 'range'  # 'depth'
+# Ruben: refactor these:
+max_range = ChannelDepthEnd
+vistep = ChannelThickness
+vitype = ChannelType  # 'depth'
 
-# CRIMAC regridder parameters
-SvThreshold = 0  # db eller lineære verdiar?
+# Values
+SvThreshold = 0  # db eller lineære verdiar? Not implemented.
 Type = "C"  # C = sA, Nautical area scattering coefficient
 Unit = "m2nmi-2"  # see http://vocab.ices.dk/?ref=1460 |
-main_freq = 38000
-threshold = 0.8  # dont think this is needed. The allocation is not binary.
+main_freq = 38000  # The frequency to integrate (could be a list in the future)
 
-vitype = 'range'  # 'depth'
+# This is not needed. The allocation is based on the annotation
+# proportions and is not binary.
+threshold = 0.8  
 
+#
+# Do the regridding
+#
 rep = rg.Reportgenerator(grid_file_name,
                          pred_file_name,
                          bot_file_name,
@@ -62,12 +76,12 @@ rep.save(report_file_name+'.png')
 # Saving to ICESAcoustic format
 #
 
-# (Ruben: This part needs to be added to the main classes)
-
 # Reading the report & original data
 grid = xr.open_zarr(grid_file_name)
 pred = xr.open_zarr(pred_file_name)
 report = xr.open_zarr(report_file_name)
+
+# (Ruben: This part needs refactored into the main classes)
 
 # Rename coordinates and variables
 report = report.rename({'latitude': 'Latitude',
@@ -80,12 +94,12 @@ report = report.rename({'latitude': 'Latitude',
 # Add new coordinates
 N = len(report.Time)
 Latitude2 = np.append(report.Latitude[1:].values, np.NaN)  # Adress end point
-Longitude2 = np.append(report.Longitude[1:].values, np.NaN)  # Address last
+Longitude2 = np.append(report.Longitude[1:].values, np.NaN)  # Address last point
 Origin = np.repeat("start", N)
 Origin2 = np.repeat("end", N)
 BottomDepth = np.repeat(np.nan, N)  # Needs to be added from input data
 Validity = np.repeat("V", N)
-# Upper depth of the integrator cell in meters relative surface
+# Upper depth of the integrator should use the ChannelDepthStart
 ChannelDepthLower = np.append(
     report.ChannelDepthUpper[1:].values, np.NaN)  # Adress end point
 
@@ -98,7 +112,8 @@ report = report.assign_coords(Validity=("Time", Validity))
 report = report.assign_coords(ChannelDepthLower=("ChannelDepthUpper",
                                                  ChannelDepthLower))
 
-# Ruben: Is this log distance?:
+# Ruben: Is this log distance? check this.
+# Arne Johannes: should we also have a Distance2?
 report = report.assign_coords(Distance=("Time", report.distance[1, :].values))
 
 # Add attributes
@@ -114,7 +129,7 @@ report = report.assign_attrs({"PingAxisIntervalType": PingAxisIntervalType,
 # (Ruben: end refactoring)
 
 #
-# Flatten the data to a dataframe
+# Flatten the data to a dataframe and write to file
 #
 
 df = report.to_dataframe()
@@ -127,7 +142,6 @@ df.to_csv(report_file_name+'.csv', index=True)
 #
 # Testing
 #
-
 
 # Comparing the integrator with xarray averaging
 
