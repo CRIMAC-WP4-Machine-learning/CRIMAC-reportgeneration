@@ -92,6 +92,7 @@ class Reportgenerator:
             colidx = colidx.compute().flatten()
 
             # This is a bottleneck. How to speed up?
+            # Try to use storage, see ZarrGridder
             masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
 
         """
