@@ -13,7 +13,7 @@ from pathlib import Path
 
 class Reportgenerator:
 
-    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
+    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
         self.out_fname = out_fname
@@ -48,7 +48,10 @@ class Reportgenerator:
         self.worker_data = []
 
         for cat in zarr_pred["annotation"]["category"]:
-            masked_sv = self.applyMask(zarr_grid, zarr_pred, cat=cat, freq=38000)
+
+            zarr_grid = xr.where(zarr_grid < np.power(10, SvThreshold/10), 0, zarr_grid)
+
+            masked_sv = self.applyMask(zarr_grid, zarr_pred, cat=cat, freq=freq)
 
             if vtype == 'depth':
                 masked_sv = self.rangeToDepthCorrection(masked_sv)

@@ -1,10 +1,8 @@
 import reportgeneration.Reportgenerator as rg
 import xarray as xr
-import dask
+
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import os
 
 #baseDir = r'/media/hd2/Data/CRIMAC/Reportgen'
 baseDir = r'C:\Users\ruben\work\ResilioSync\Dev\Proj\2019Q3-CRIMAC\Data'
@@ -37,9 +35,12 @@ ChannelThickness = 10
 ChannelType = 'range'  # 'depth'
 # Ruben: refactor these:
 
-
 # Values
-SvThreshold = 0  # db eller lineære verdiar? Not implemented. Bruk denne. Spør arne Johan
+
+# db verdi siden det er SvThreshold og ikke svThreshold
+# Verdier under terskelen erstattes med sv=0
+SvThreshold = -100
+
 Type = "C"  # C = sA, Nautical area scattering coefficient
 Unit = "m2nmi-2"  # see http://vocab.ices.dk/?ref=1460 |
 main_freq = 38000  # The frequency to integrate (could be a list in the future)
@@ -62,7 +63,7 @@ rep = rg.Reportgenerator(grid_file_name,
 
 rep.save(report_file_name)
 rep.save(report_file_name+'.png')
-
+rep.cleanup()
 
 #
 # Saving to ICESAcoustic format
