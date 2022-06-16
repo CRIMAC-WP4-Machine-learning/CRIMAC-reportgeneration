@@ -34,7 +34,8 @@ class DockerMain :
 
         self.output_type = os.getenv('OUTPUT_TYPE', 'zarr')
         self.main_freq = float(os.getenv('MAIN_FREQ', 38000))
-        self.max_range = float(os.getenv('MAX_RANGE_SRC', 500))
+        self.ChannelDepthStart = float(os.getenv('CHANNEL_DEPTH_START', 0))
+        self.ChannelDepthEnd = float(os.getenv('CHANNEL_DEPTH_END', 500))
 
         self.data_input_name = os.getenv('DATA_INPUT_NAME', None)
         self.pred_input_name = os.getenv('PRED_INPUT_NAME', None)
@@ -115,7 +116,8 @@ class DockerMain :
             --env WRITE_PNG=result.png\n \
             --env THRESHOLD=0.8\n \
             --env MAIN_FREQ = 38000\n \
-            --env MAX_RANGE_SRC = 500\n \
+            --env CHANNEL_DEPTH_START = 0\n \
+            --env CHANNEL_DEPTH_END = 500\n \
             --env HOR_INTEGRATION_TYPE =  [ping | time | nmi]\n  \
             --env HOR_INTEGRATION_STEP = 100\n \
             --env VERT_INTEGRATION_TYPE=[range | nmi]\n \
@@ -146,7 +148,8 @@ class DockerMain :
             self.vistep,
             self.hitype,
             self.histep,
-            self.max_range
+            self.ChannelDepthStart,
+            self.ChannelDepthEnd
         )
 
         rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))

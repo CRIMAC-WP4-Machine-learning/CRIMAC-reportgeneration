@@ -19,7 +19,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 ## Features
 
 1. Can integrate/regrid onto a new time/distance and depth/range grid by acoustic class
-2. Processing and re-gridding the channels are done in parallel (using `Dask`’s delayed).
+2. Processing and re-gridding the channels are done in parallel (using `Dask`’s delayed). Removed due to docker problems.
 3. Automatic resuming from the last `ping_time` if the output file exists.
 4. Batch processing is done by appending directly to the output file, should be memory efficient.
 5. The image of this repository is available at Docker Hub (https://hub.docker.com/r/crimac/reportgeneration).
@@ -104,7 +104,8 @@ docker run -rm -it --name reportgenerator
 --env WRITE_PNG="${SURVEY}_report_0.png"
 --env THRESHOLD=0.8
 --env MAIN_FREQ=38000
---env MAX_RANGE_SRC=500
+--env CHANNEL_DEPTH_START=0
+--env CHANNEL_DEPTH_END=500
 --env HOR_INTEGRATION_TYPE=ping
 --env HOR_INTEGRATION_STEP=100
 --env VERT_INTEGRATION_TYPE=range
@@ -114,5 +115,5 @@ reportgenerator
 ```
 
 ```bash
-docker run -rm -it --name reportgenerator -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin -v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout --security-opt label=disable --env DATA_INPUT_NAME="${SURVEY}_sv.zarr" --env PRED_INPUT_NAME="${SURVEY}_labels.zarr" --env OUTPUT_NAME="${SURVEY}_report_0.zarr" --env WRITE_PNG="${SURVEY}_report_0.png" --env THRESHOLD=0.8 --env MAIN_FREQ=38000 --env MAX_RANGE_SRC=500 --env HOR_INTEGRATION_TYPE=ping --env HOR_INTEGRATION_STEP=100 --env VERT_INTEGRATION_TYPE=range --env VERT_INTEGRATION_STEP=10 reportgenerator
+docker run -rm -it --name reportgenerator -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin -v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout --security-opt label=disable --env DATA_INPUT_NAME="${SURVEY}_sv.zarr" --env PRED_INPUT_NAME="${SURVEY}_labels.zarr" --env OUTPUT_NAME="${SURVEY}_report_0.zarr" --env WRITE_PNG="${SURVEY}_report_0.png" --env THRESHOLD=0.8 --env MAIN_FREQ=38000 --env CHANNEL_DEPTH_START=0 --env CHANNEL_DEPTH_END=0 --env HOR_INTEGRATION_TYPE=ping --env HOR_INTEGRATION_STEP=100 --env VERT_INTEGRATION_TYPE=range --env VERT_INTEGRATION_STEP=10 reportgenerator
 ```
