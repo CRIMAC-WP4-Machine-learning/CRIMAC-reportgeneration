@@ -74,53 +74,6 @@ grid = xr.open_zarr(grid_file_name)
 pred = xr.open_zarr(pred_file_name)
 report = xr.open_zarr(report_file_name)
 
-# (Ruben: This part needs refactored into the main classes)
-
-# Rename coordinates and variables
-report = report.rename({'latitude': 'Latitude',
-                        'longitude': 'Longitude',
-                        'ping_time': 'Time',
-                        'sv': 'value',
-                        'range': 'ChannelDepthUpper',
-                        'category': 'SaCategory'})
-
-# Add new coordinates
-N = len(report.Time)
-Latitude2 = np.append(report.Latitude[1:].values, np.NaN)  # Adress end point
-Longitude2 = np.append(report.Longitude[1:].values, np.NaN)  # Address last point
-Origin = np.repeat("start", N)
-Origin2 = np.repeat("end", N)
-BottomDepth = np.repeat(np.nan, N)  # Needs to be added from input data. Vi skal ha range i dataen
-Validity = np.repeat("V", N)
-# Upper depth of the integrator should use the ChannelDepthStart
-ChannelDepthLower = np.append(
-    report.ChannelDepthUpper[1:].values, np.NaN)  # Adress end point
-
-report = report.assign_coords(Latitude2=("Time", Latitude2))
-report = report.assign_coords(Longitude2=("Time", Longitude2))
-report = report.assign_coords(Origin=("Time", Origin))
-report = report.assign_coords(Origin2=("Time", Origin2))
-report = report.assign_coords(BottomDepth=("Time", BottomDepth))
-report = report.assign_coords(Validity=("Time", Validity))
-report = report.assign_coords(ChannelDepthLower=("ChannelDepthUpper",
-                                                 ChannelDepthLower))
-
-# Ruben: Is this log distance? check this.
-# Arne Johannes: should we also have a Distance2?
-report = report.assign_coords(Distance=("Time", report.distance[1, :].values))
-
-# Add attributes
-report = report.assign_attrs({"PingAxisIntervalType": PingAxisIntervalType,
-                              "PingAxisIntervalOrigin": PingAxisIntervalOrigin,
-                              "PingAxisIntervalUnit": PingAxisIntervalUnit,
-                              "PingAxisInterval": PingAxisInterval,
-                              "Platform": "NaN",
-                              "LocalID": "NaN",
-                              "Type": Type,
-                              "Unit": Unit})
-
-# (Ruben: end refactoring)
-
 #
 # Flatten the data to a dataframe and write to file
 #

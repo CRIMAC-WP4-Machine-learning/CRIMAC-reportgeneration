@@ -16,6 +16,8 @@ class Reportgenerator:
     def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
+        self.htype = htype
+        self.hstep = hstep
         self.out_fname = out_fname
         self.tmp_path_name = None
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
@@ -29,6 +31,7 @@ class Reportgenerator:
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
+            """
             Log().info('Existing file found, trying to append')
             self.has_out_file = True
             zarr_out = xr.open_zarr(out_fname)
@@ -40,6 +43,19 @@ class Reportgenerator:
 
             Log().info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
             Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
+            """
+            Log().info('Existing file found, trying to append')
+            self.has_out_file = True
+            zarr_out = xr.open_zarr(out_fname)
+            start_time = zarr_out['time'].values[-1]
+            stop_time = zarr_grid['time'].values[-1]
+            zarr_grid = zarr_grid.sel(time=slice(start_time, stop_time))
+            zarr_pred = zarr_pred.sel(time=slice(start_time, stop_time))
+            zarr_bot = zarr_bot.sel(time=slice(start_time, stop_time))
+
+            Log().info(
+                'Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['time'].values[0], start_time))
+            Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['time'].values[0], stop_time))
         else:
             Log().info('Starting new outputfile')
 
@@ -182,7 +198,76 @@ class Reportgenerator:
 
             self.ds = self.ds.isel(ping_time=slice(1, len(self.ds['ping_time']) - 1))
 
+            self.ds = self.formatToRapport(self.ds)
+
         return self.ds
+
+    def formatToRapport(self, ds):
+
+        ds = ds.rename({'latitude': 'Latitude',
+                        'longitude': 'Longitude',
+                        'ping_time': 'Time',
+                        'sv': 'value',
+                        'range': 'ChannelDepthUpper',
+                        'category': 'SaCategory'})
+
+        # Add new coordinates
+        N = len(ds.Time)
+        Latitude2 = np.append(ds.Latitude[1:].values, np.NaN)  # Adress end point
+        Longitude2 = np.append(ds.Longitude[1:].values, np.NaN)  # Address last point
+        Origin = np.repeat("start", N)
+        Origin2 = np.repeat("end", N)
+        BottomDepth = np.repeat(np.nan, N)  # Needs to be added from input data. Vi skal ha range i dataen
+        Validity = np.repeat("V", N)
+        # Upper depth of the integrator should use the ChannelDepthStart
+        ChannelDepthLower = np.append(ds.ChannelDepthUpper[1:].values, np.NaN)  # Adress end point
+
+        ds = ds.assign_coords(Latitude2=("Time", Latitude2))
+        ds = ds.assign_coords(Longitude2=("Time", Longitude2))
+        ds = ds.assign_coords(Origin=("Time", Origin))
+        ds = ds.assign_coords(Origin2=("Time", Origin2))
+        ds = ds.assign_coords(BottomDepth=("Time", BottomDepth))
+        ds = ds.assign_coords(Validity=("Time", Validity))
+
+        ds = ds.assign_coords(ChannelDepthLower=("ChannelDepthUpper", ChannelDepthLower))
+
+        # Ruben: Is this log distance? check this.
+        # Arne Johannes: should we also have a Distance2?
+        # This causes problem when saving, why?
+        #ds = ds.assign_coords(Distance=("Time", ds.distance[0, :].values))
+        distance = ds.distance[0, :].values
+        ds = ds.drop('distance') # This needs to be dropped due to new coordinate Distance
+        ds = ds.assign_coords(Distance=("Time", distance))
+
+        # Add attributes
+
+        # http://vocab.ices.dk/?ref=1455
+        if self.htype=='nmi':
+            PingAxisIntervalType = 'distance'
+            PingAxisIntervalUnit = 'nmi'
+        else:
+            PingAxisIntervalType = self.htype
+
+        if self.htype=='ping':
+            PingAxisIntervalUnit = 'ping'
+        elif self.htype=='time':
+            PingAxisIntervalUnit = 'sec'
+
+        PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
+
+        PingAxisInterval = self.hstep
+
+        ds = ds.assign_attrs({
+            "PingAxisIntervalType": PingAxisIntervalType,
+            "PingAxisIntervalOrigin": PingAxisIntervalOrigin,
+            "PingAxisIntervalUnit": PingAxisIntervalUnit,
+            "PingAxisInterval": PingAxisInterval,
+            "Platform": "NaN",
+            "LocalID": "NaN",
+            "Type": "C",
+            "Unit": "m2nmi-2"})
+
+        return ds
 
     def save(self, fname):
 
@@ -194,7 +279,7 @@ class Reportgenerator:
 
         if file_ext == '.zarr':
             if self.has_out_file:
-                self.ds.to_zarr(fname, mode='a',append_dim='ping_time')
+                self.ds.to_zarr(fname, mode='a',append_dim='time')
             else:
 
                 compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
@@ -212,20 +297,24 @@ class Reportgenerator:
 
             vmax = -20
             vmin = -80
-            for cat in self.ds['category']:
+            for cat in self.ds['SaCategory']:
                 Log().info(f'Generating image for category : {cat.values.flatten()[0]}')
-                data = self.ds.sel(category=cat)
+                data = self.ds.sel(SaCategory=cat)
 
                 fig = plt.figure(figsize=(12, 6))
                 ax = plt.axes()
                 plt.title('{} @ {}'.format(cat.values, data['channel_id'].values))
 
                 # Set axis limits
-                x_lims = mdates.date2num(data['ping_time'].values)
+                x_lims = mdates.date2num(data['Time'].values)
 
-                extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1], data[self.vtype].values[0]]
+                if self.vtype == 'range':
+                    extent = [x_lims[0], x_lims[-1].astype(float), data['ChannelDepthUpper'].values[-1], data['ChannelDepthUpper'].values[0]]
+                else:
+                    extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1],
+                              data[self.vtype].values[0]]
 
-                im = plt.gca().imshow(10 * np.log10(data['sv'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
+                im = plt.gca().imshow(10 * np.log10(data['value'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 
                 plt.ylabel('Sv {}(m)'.format(self.vtype))
 
