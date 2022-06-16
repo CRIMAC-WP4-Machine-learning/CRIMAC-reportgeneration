@@ -9,25 +9,18 @@ from reportgeneration.XGridder import XGridder
     Lossless gridding on EKdata from gridder    
 """
 class EKGridder(XGridder):
-    def __init__(self, data, v_integration_type='range', v_step=50, h_integration_type='ping', h_step=10, max_range=500):
+    def __init__(self, data, v_integration_type='range', v_step=50, h_integration_type='ping', h_step=10, ChannelDepthStart=0, ChannelDepthEnd=500):
         self.ping_time = None
         self.distance = None
 
-        # Limit range according to max_range
-        """
-        if 'depth' in data.coords:
-            data = data.sel(depth=slice(0, max_range))
-        else:
-            data = data.sel(range=slice(0, max_range))
-        """
-        data = data.sel(range=slice(0, max_range))
+        data = data.sel(range=slice(ChannelDepthStart, ChannelDepthEnd))
 
         source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step)
         source_h_bins, target_h_bins = self.calckBins(data, h_integration_type, h_step)
         super().__init__(target_v_bins, source_v_bins, target_h_bins, source_h_bins)
         self.h_integration_type = h_integration_type
         self.data = data
-        self.max_range = max_range
+        self.max_range = ChannelDepthEnd
 
 
     def calckBins(self, data, _type, step):
@@ -81,11 +74,11 @@ class EKGridder(XGridder):
 
         elif _type == 'range':
             sbins = data['range']
-            tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
+            tbins = xr.DataArray(np.arange(data['range'][0], data['range'][-1], step))
         elif _type == 'depth':
             # Range is converted to depth in Reportgenerator
             sbins = data['range']
-            tbins = xr.DataArray(np.arange(0, data['range'][-1], step))
+            tbins = xr.DataArray(np.arange(data['range'][0], data['range'][-1], step))
 
 
         else:

@@ -29,8 +29,6 @@ PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
 PingAxisIntervalUnit = "nmi"  # see http://vocab.ices.dk/?ref=1456
 PingAxisInterval = 0.1
 # Ruben: refactor these to ICESAcoustic variable names:
-hitype = PingAxisIntervalUnit
-histep = PingAxisInterval
 
 # Channel
 ChannelDepthStart = 0  # Integration start depth (not implemented)
@@ -38,19 +36,13 @@ ChannelDepthEnd = 500
 ChannelThickness = 10
 ChannelType = 'range'  # 'depth'
 # Ruben: refactor these:
-max_range = ChannelDepthEnd
-vistep = ChannelThickness
-vitype = ChannelType  # 'depth'
+
 
 # Values
 SvThreshold = 0  # db eller lineære verdiar? Not implemented. Bruk denne. Spør arne Johan
 Type = "C"  # C = sA, Nautical area scattering coefficient
 Unit = "m2nmi-2"  # see http://vocab.ices.dk/?ref=1460 |
 main_freq = 38000  # The frequency to integrate (could be a list in the future)
-
-# This is not needed. The allocation is based on the annotation
-# proportions and is not binary.
-threshold = 0.8 # - Denne skal ikke brukes
 
 #
 # Do the regridding
@@ -60,12 +52,13 @@ rep = rg.Reportgenerator(grid_file_name,
                          bot_file_name,
                          report_file_name,
                          main_freq,
-                         threshold,
-                         vitype,
-                         vistep,
-                         hitype,
-                         histep,
-                         max_range)
+                         SvThreshold,
+                         ChannelType,
+                         ChannelThickness,
+                         PingAxisIntervalUnit,
+                         PingAxisInterval,
+                         ChannelDepthStart,
+                         ChannelDepthEnd)
 
 rep.save(report_file_name)
 rep.save(report_file_name+'.png')
@@ -148,13 +141,13 @@ df.to_csv(report_file_name+'.csv', index=True)
 # should be similar to Sa
 hres = (grid.sv.sel(frequency=38000) *
         pred.annotation.sel(category=27)).mean(dim='range').resample(
-            ping_time='H').mean() * max_range
+            ping_time='H').mean() * ChannelDepthEnd
 Sa_raw = 10*np.log10(hres+0.00000001)
 
 # Do the same for the output from the integrator. Should be similar'sih
 # as the plot from the original data
 lres = report.value.sel(SaCategory=27).mean(dim='ChannelDepthUpper').resample(
-            Time='H').mean() * max_range
+            Time='H').mean() * ChannelDepthEnd
 Sa_int = 10*np.log10(lres+0.00000001)
 
 fig, axes = plt.subplots(nrows=2)

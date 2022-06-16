@@ -13,7 +13,7 @@ from pathlib import Path
 
 class Reportgenerator:
 
-    def __init__(self,grid_fname=None, pred_fname=None,bot_fname=None,out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, max_range=500):
+    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, threshold=0.5, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
         self.out_fname = out_fname
@@ -55,7 +55,7 @@ class Reportgenerator:
                 # Range is now depth
                 masked_sv['range'] = masked_sv['range'] + masked_sv['transducer_draft'][0].values
 
-            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, max_range)
+            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, ChannelDepthStart, ChannelDepthEnd)
             if ekgridder.target_h_bins.shape[0] <= 2:
                 self.worker_data = None
                 Log().info('Not enough data to make a grid.')
