@@ -182,9 +182,7 @@ if __name__ == '__main__':
         Log().info(client)
 
         try:
-            Log().info('1')
             dm.run()
-            Log().info('2')
         except :
             Log().error(traceback.format_exc())
 
