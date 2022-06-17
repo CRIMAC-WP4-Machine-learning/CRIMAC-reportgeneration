@@ -419,7 +419,8 @@ if __name__ == "__main__":
     parser.add_argument("--img", type=str, help="Save image file")
     parser.add_argument("--thr", type=float, help="Threshold for predictions")
     parser.add_argument("--freq", type=float, help="Frequency to gridd")
-    parser.add_argument("--range", type=float, help="Range to integrate over (m)")
+    parser.add_argument("--depth_start", type=float, help="Start range/depth to integrate over (m)")
+    parser.add_argument("--depth_end", type=float, help="End range/depth to integrate over (m)")
     parser.add_argument("--htype", type=str,choices=['ping', 'time' , 'nmi'], help="Type of horizontal integration")
     parser.add_argument("--hstep", type=float, help="Step unit for horizontal integration : #pings | seconds | nautical miles)")
     parser.add_argument("--vtype", type=str, choices=['range', 'depth'], help="Type of vertical integration")
@@ -438,7 +439,8 @@ if __name__ == "__main__":
         args.vstep,
         args.htype,
         args.hstep,
-        args.range
+        args.depth_start,
+        args.depth_end
     )
 
     rg.save(args.out)
@@ -447,13 +449,19 @@ if __name__ == "__main__":
     gridd = rg.getGridd()
     if gridd is not None:
         dstDir = str(Path(args.out).parent)
-        for cat in gridd['category']:
+        for cat in gridd['SaCategory']:
             Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
-            sv = gridd.sel(category=cat.values)['sv']
+            sv = gridd.sel(SaCategory=cat.values)['value']
+
+            """
             if 'range' in gridd.coords._names:
                 sum_sv = sv.sum(dim='range')
             elif 'depth' in gridd.coords._names:
                 sum_sv = sv.sum(dim='depth')
+            """
+
+            sum_sv = sv.sum(dim='ChannelDepthUpper')
+
 
             sum_sv.plot()
             if not os.path.exists(dstDir):
