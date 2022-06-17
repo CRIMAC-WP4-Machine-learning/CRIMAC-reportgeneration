@@ -114,7 +114,7 @@ class DockerMain :
             --env BOT_INPUT_NAME=bottom_filename.zarr (optional)\n\
             --env OUTPUT_NAME=result.zarr\n\
             --env WRITE_PNG=result.png\n \
-            --env THRESHOLD=0.8\n \
+            --env THRESHOLD=-100\n \
             --env MAIN_FREQ = 38000\n \
             --env CHANNEL_DEPTH_START = 0\n \
             --env CHANNEL_DEPTH_END = 500\n \
