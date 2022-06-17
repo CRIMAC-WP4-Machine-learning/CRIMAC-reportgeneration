@@ -32,7 +32,7 @@ PingAxisInterval = 0.1
 ChannelDepthStart = 0  # Integration start depth (not implemented)
 ChannelDepthEnd = 500
 ChannelThickness = 10
-ChannelType = 'range'  # 'depth'
+ChannelType = 'depth'  # 'depth'
 # Ruben: refactor these:
 
 # Values

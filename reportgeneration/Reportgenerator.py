@@ -9,6 +9,7 @@ import dask
 from Logger import Logger as Log
 from reportgeneration.EKGridder import EKGridder
 from pathlib import Path
+import zarr
 
 
 class Reportgenerator:
@@ -47,15 +48,15 @@ class Reportgenerator:
             Log().info('Existing file found, trying to append')
             self.has_out_file = True
             zarr_out = xr.open_zarr(out_fname)
-            start_time = zarr_out['time'].values[-1]
-            stop_time = zarr_grid['time'].values[-1]
-            zarr_grid = zarr_grid.sel(time=slice(start_time, stop_time))
-            zarr_pred = zarr_pred.sel(time=slice(start_time, stop_time))
-            zarr_bot = zarr_bot.sel(time=slice(start_time, stop_time))
+            start_time = zarr_out['Time'].values[-1]
+            stop_time = zarr_grid['ping_time'].values[-1]
+            zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
+            zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
+            zarr_bot = zarr_bot.sel(ping_time=slice(start_time, stop_time))
 
             Log().info(
-                'Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['time'].values[0], start_time))
-            Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['time'].values[0], stop_time))
+                'Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['Time'].values[0], start_time))
+            Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0], stop_time))
         else:
             Log().info('Starting new outputfile')
 
@@ -93,7 +94,7 @@ class Reportgenerator:
         self.ds = None
 
 
-    def rangeToDepthCorrection(self, masked_sv):
+    def rangeToDepthCorrection_(self, masked_sv):
 
         dr = masked_sv['range'].diff('range')[0].values
         ridx = (masked_sv['transducer_draft']+masked_sv['heave'])/dr
@@ -114,6 +115,47 @@ class Reportgenerator:
             # Try to use storage, see ZarrGridder
             masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
 
+        """
+        # Debug check echogram after heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000, :].transpose().values + 10e-20), vmin=-80, vmax=-20,
+                   origin='upper')
+        plt.axis('auto')
+        plt.show()
+        """
+        return masked_sv
+
+    def rangeToDepthCorrection(self, masked_sv):
+
+        dr = masked_sv['range'].diff('range')[0].values
+        ridx = (masked_sv['transducer_draft']+masked_sv['heave'])/dr
+        ridx = xr.DataArray.round(ridx).astype(int).data
+
+        """
+        # Debug check echogram before heav and draft compensated
+        plt.figure()
+        plt.imshow(10 * np.log10(masked_sv['sv'][0:1000,:].transpose().values + 10e-20), vmin=-80,vmax=-20, origin='upper')
+        plt.axis('auto')
+        """
+        #self.tmp_path_name_depth = str(Path(self.out_fname).parent) + os.sep + '__tmp_main_out_depth'
+        #store = zarr.DirectoryStore(self.tmp_path_name_depth)
+        #depth_masked_sv = zarr.zeros((masked_sv['sv'].shape[0], masked_sv['sv'].shape[1]),chunks=(100, 100), store=store, overwrite=True,compressor=None)
+
+        #zarr.copy_store(masked_sv, depth_masked_sv)
+        #masked_sv.to_zarr(self.tmp_path_name_depth,mode='w')
+        #depth_masked_sv = xr.open_zarr(self.tmp_path_name_depth)
+        depth_masked_sv = masked_sv.copy()
+        for offset in np.unique(ridx.compute()):
+            colidx = dask.array.argwhere(ridx == offset)
+            colidx = colidx.compute().flatten()
+
+            # This is a bottleneck. How to speed up?
+            # Try to use storage, see ZarrGridder
+            #masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
+            depth_masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
+
+        masked_sv = depth_masked_sv
+        #os.rmdir(self.tmp_path_name_depth)
         """
         # Debug check echogram after heav and draft compensated
         plt.figure()
@@ -204,11 +246,16 @@ class Reportgenerator:
 
     def formatToRapport(self, ds):
 
+        if 'range' in ds.coords:
+            range_or_depth='range'
+        else :
+            range_or_depth = 'depth'
+
         ds = ds.rename({'latitude': 'Latitude',
                         'longitude': 'Longitude',
                         'ping_time': 'Time',
                         'sv': 'value',
-                        'range': 'ChannelDepthUpper',
+                        range_or_depth: 'ChannelDepthUpper',
                         'category': 'SaCategory'})
 
         # Add new coordinates
@@ -308,12 +355,15 @@ class Reportgenerator:
                 # Set axis limits
                 x_lims = mdates.date2num(data['Time'].values)
 
+                extent = [x_lims[0], x_lims[-1].astype(float), data['ChannelDepthUpper'].values[-1],
+                          data['ChannelDepthUpper'].values[0]]
+                """
                 if self.vtype == 'range':
                     extent = [x_lims[0], x_lims[-1].astype(float), data['ChannelDepthUpper'].values[-1], data['ChannelDepthUpper'].values[0]]
                 else:
                     extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1],
                               data[self.vtype].values[0]]
-
+                """
                 im = plt.gca().imshow(10 * np.log10(data['value'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 
                 plt.ylabel('Sv {}(m)'.format(self.vtype))
