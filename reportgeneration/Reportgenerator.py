@@ -9,7 +9,7 @@ import dask
 from Logger import Logger as Log
 from reportgeneration.EKGridder import EKGridder
 from pathlib import Path
-import zarr
+from Resources import Resources as Res
 
 
 class Reportgenerator:
@@ -20,7 +20,7 @@ class Reportgenerator:
         self.htype = htype
         self.hstep = hstep
         self.out_fname = out_fname
-        self.tmp_path_name = None
+        Res().setTmpDir(str(Path(self.out_fname).parent) + os.sep + 'tmp')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_grid = zarr_grid.drop_vars(['angle_alongship', 'angle_athwartship'])
         zarr_pred = xr.open_zarr(pred_fname)
@@ -32,19 +32,7 @@ class Reportgenerator:
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
         if out_fname is not None and os.path.exists(out_fname):
-            """
-            Log().info('Existing file found, trying to append')
-            self.has_out_file = True
-            zarr_out = xr.open_zarr(out_fname)
-            start_time = zarr_out['ping_time'].values[-1]
-            stop_time = zarr_grid['ping_time'].values[-1]
-            zarr_grid = zarr_grid.sel(ping_time=slice(start_time, stop_time))
-            zarr_pred = zarr_pred.sel(ping_time=slice(start_time, stop_time))
-            zarr_bot = zarr_bot.sel(ping_time=slice(start_time, stop_time))
 
-            Log().info('Existing output file time span: \nt0={}\nt1={}'.format(zarr_out['ping_time'].values[0],start_time))
-            Log().info('Got new data spanning:\nt0={}\nt1={}'.format(zarr_grid['ping_time'].values[0],stop_time))
-            """
             Log().info('Existing file found, trying to append')
             self.has_out_file = True
             zarr_out = xr.open_zarr(out_fname)
@@ -93,7 +81,6 @@ class Reportgenerator:
 
         self.ds = None
 
-
     def rangeToDepthCorrection_(self, masked_sv):
 
         dr = masked_sv['range'].diff('range')[0].values
@@ -137,13 +124,7 @@ class Reportgenerator:
         plt.imshow(10 * np.log10(masked_sv['sv'][0:1000,:].transpose().values + 10e-20), vmin=-80,vmax=-20, origin='upper')
         plt.axis('auto')
         """
-        #self.tmp_path_name_depth = str(Path(self.out_fname).parent) + os.sep + '__tmp_main_out_depth'
-        #store = zarr.DirectoryStore(self.tmp_path_name_depth)
-        #depth_masked_sv = zarr.zeros((masked_sv['sv'].shape[0], masked_sv['sv'].shape[1]),chunks=(100, 100), store=store, overwrite=True,compressor=None)
 
-        #zarr.copy_store(masked_sv, depth_masked_sv)
-        #masked_sv.to_zarr(self.tmp_path_name_depth,mode='w')
-        #depth_masked_sv = xr.open_zarr(self.tmp_path_name_depth)
         depth_masked_sv = masked_sv.copy()
         for offset in np.unique(ridx.compute()):
             colidx = dask.array.argwhere(ridx == offset)
@@ -151,11 +132,10 @@ class Reportgenerator:
 
             # This is a bottleneck. How to speed up?
             # Try to use storage, see ZarrGridder
-            #masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
             depth_masked_sv['sv'][colidx, :] = masked_sv['sv'][colidx, :].shift(range=offset)
 
         masked_sv = depth_masked_sv
-        #os.rmdir(self.tmp_path_name_depth)
+
         """
         # Debug check echogram after heav and draft compensated
         plt.figure()
@@ -212,19 +192,20 @@ class Reportgenerator:
             # Store grid for each category
             # Then reload and concatenate
 
-            # Enshure tmp directory exists
-            self.tmp_path_name = str(Path(self.out_fname).parent) + os.sep + '__tmp_main_out'
-            if not os.path.exists(self.tmp_path_name):
-                os.makedirs(self.tmp_path_name)
+            # Ensure tmp directory exists
+            tmp_path_name = Res().getTmpDir() + os.sep + '__tmp_main_out'
+
+            if not os.path.exists(tmp_path_name):
+                os.makedirs(tmp_path_name)
 
             # Store each category
             fnames = []
             for d in self.worker_data:
-                fname = self.tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
+                fname = tmp_path_name+os.sep+f'gridd_{d["category"].values[0]}.zarr'
                 fnames.append(fname)
                 d.to_zarr(fnames[-1], mode='w',safe_chunks=False)
 
-            # Reload and concatinate
+            # Reload and concatenate
             self.worker_data = []
             for fname in fnames:
                 d = xr.open_zarr(fname)
@@ -247,7 +228,7 @@ class Reportgenerator:
     def formatToRapport(self, ds):
 
         if 'range' in ds.coords:
-            range_or_depth='range'
+            range_or_depth = 'range'
         else :
             range_or_depth = 'depth'
 
@@ -325,19 +306,14 @@ class Reportgenerator:
             return
 
         if file_ext == '.zarr':
+
             if self.has_out_file:
-                self.ds.to_zarr(fname, mode='a',append_dim='time')
+                self.ds.to_zarr(fname, mode='a', append_dim='time')
             else:
-
                 compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
-
                 encoding = {var: {"compressor": compressor} for var in self.ds.data_vars}
-
                 Log().info(f'Writing gridded data to : {fname}')
-                #self.ds.compute()                                   # Crash for large dataset 150GB
-                self.ds.to_zarr(fname, mode='w', encoding=encoding) # Crash for large dataset 150GB
-                #self.ds.to_dataframe().netcdf(fname + '.csv')        # Crash for large dataset 150GB
-                #self.ds.to_dataframe().to_csv(fname + '.csv')       # Crash for large dataset 150GB
+                self.ds.to_zarr(fname, mode='w', encoding=encoding)
                 Log().info(f'Done writing file {fname}')
 
         elif file_ext == '.png':
@@ -357,13 +333,7 @@ class Reportgenerator:
 
                 extent = [x_lims[0], x_lims[-1].astype(float), data['ChannelDepthUpper'].values[-1],
                           data['ChannelDepthUpper'].values[0]]
-                """
-                if self.vtype == 'range':
-                    extent = [x_lims[0], x_lims[-1].astype(float), data['ChannelDepthUpper'].values[-1], data['ChannelDepthUpper'].values[0]]
-                else:
-                    extent = [x_lims[0], x_lims[-1].astype(float), data[self.vtype].values[-1],
-                              data[self.vtype].values[0]]
-                """
+
                 im = plt.gca().imshow(10 * np.log10(data['value'].transpose().values + 10e-20), vmin=vmin,vmax=vmax, extent=extent, origin='upper')
 
                 plt.ylabel('Sv {}(m)'.format(self.vtype))
@@ -387,9 +357,14 @@ class Reportgenerator:
         else:
             Log().error('{} format not supported'.format(fname[-4:]))
 
-    def cleanup(self):
-        if self.tmp_path_name is not None and os.path.exists(self.tmp_path_name):
-            shutil.rmtree(self.tmp_path_name)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        tmpDir = Res().getTmpDir()
+        if os.path.exists(tmpDir):
+            shutil.rmtree(tmpDir)
 
 
 """
@@ -399,9 +374,10 @@ python Reportgenerator.py \
     --bot S2019847_0511_bottom.zarr
     --out S2019847_0511_report.zarr
     --img S2019847_0511_report.png
-    --thr 0.8
+    --thr -80
     --freq 38000
-    --range 500
+    --depth_start 0
+    --depth_end 500
     --htype ping
     --hstep 100
     --vtype range
@@ -428,7 +404,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    rg = Reportgenerator(
+    with Reportgenerator(
         args.data,
         args.pred,
         args.bot,
@@ -441,32 +417,24 @@ if __name__ == "__main__":
         args.hstep,
         args.depth_start,
         args.depth_end
-    )
+    ) as rg:
 
-    rg.save(args.out)
-    rg.save(args.img)
+        rg.save(args.out)
+        rg.save(args.img)
 
-    gridd = rg.getGridd()
-    if gridd is not None:
-        dstDir = str(Path(args.out).parent)
-        for cat in gridd['SaCategory']:
-            Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
-            sv = gridd.sel(SaCategory=cat.values)['value']
+        gridd = rg.getGridd()
+        if gridd is not None:
+            dstDir = str(Path(args.out).parent)
+            for cat in gridd['SaCategory']:
+                Log().info(f'Generating integration image for category : {cat.values.flatten()[0]}')
+                sv = gridd.sel(SaCategory=cat.values)['value']
 
-            """
-            if 'range' in gridd.coords._names:
-                sum_sv = sv.sum(dim='range')
-            elif 'depth' in gridd.coords._names:
-                sum_sv = sv.sum(dim='depth')
-            """
+                sum_sv = sv.sum(dim='ChannelDepthUpper')
 
-            sum_sv = sv.sum(dim='ChannelDepthUpper')
+                sum_sv.plot()
+                if not os.path.exists(dstDir):
+                    os.makedirs(dstDir)
+                plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
+                plt.close()
 
 
-            sum_sv.plot()
-            if not os.path.exists(dstDir):
-                os.makedirs(dstDir)
-            plt.savefig(dstDir+os.sep+f'cat_{cat.values.flatten()[0]}.png')
-            plt.close()
-
-    rg.cleanup()
