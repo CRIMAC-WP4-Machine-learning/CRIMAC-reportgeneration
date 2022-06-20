@@ -1,10 +1,9 @@
 import zarr
-import xarray as xr
 from enum import Enum, auto
 import numpy as np
 import uuid
 import os
-import shutil
+from Resources import Resources as Res
 
 
 class GridType(Enum):
@@ -30,13 +29,7 @@ class ZarrGridder:
         else:
             self.griddType = GridType.TwoDimension
 
-        self.storageDir='tmp_W'
-
-        self.cleanup()
-
-    def cleanup(self):
-        if os.path.exists(self.storageDir):
-            shutil.rmtree(self.storageDir)
+        self.storageDir = Res().getTmpDir() + os.sep + '__tmp_W'
 
     def _resampleWeight(self, r_t, r_s):
         """
@@ -60,11 +53,43 @@ class ZarrGridder:
         # Initialize W matrix (sparse)
         fname = self.storageDir+os.sep+str(uuid.uuid1())+'.zarr'
         store = zarr.DirectoryStore(fname)
-        W=zarr.zeros((len(r_t), len(r_s) + 1),chunks=(100, 100), store=store, overwrite=True,compressor=None)
 
+        #  3.57 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, 75), store=store, overwrite=True, compressor=None)
 
-        #W = np.zeros([len(r_t), len(r_s) + 1])
-        # NB: + 1 length for space to NaNs in edge case
+        #  1.56 min
+        W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, 50), store=store, overwrite=True, compressor=None)
+
+        #  1.57 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, 40), store=store, overwrite=True, compressor=None)
+
+        #  1.58 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, 30), store=store, overwrite=True, compressor=None)
+
+        #  2.52 min
+        # W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(20, 20), store=store, overwrite=True, compressor=None)
+
+        #  3.31 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(5, 20), store=store, overwrite=True, compressor=None)
+
+        #  6.08min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(1, 20), store=store, overwrite=True, compressor=None)
+        #  2.05 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, 20), store=store, overwrite=True, compressor=None)
+
+        #  2.19 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(25, 50), store=store, overwrite=True, compressor=None)
+        #  5.07 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(25, 25), store=store, overwrite=True, compressor=None)
+        #  4.09min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(50, 100), store=store, overwrite=True, compressor=None)
+        # 6.07 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(100, 50), store=store, overwrite=True, compressor=None)
+        # 3.33 min
+        # W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(50,50), store=store, overwrite=True, compressor=None)
+        # Mor than 10 min
+        #W = zarr.zeros((len(r_t), len(r_s) + 1), chunks=(10, (len(r_s) + 1)//10), store=store, overwrite=True, compressor=None)
+
 
         # Loop over the target bins
         for i, rt in enumerate(r_t):
@@ -74,7 +99,7 @@ class ZarrGridder:
                 # The size of the target bin
                 # example target bin:  --[---[---[---[-
                 drt = bin_r_t[i + 1] - bin_r_t[i]  # From example: drt = 4
-                #drt=1
+
                 # find the indices in source
                 j0 = np.searchsorted(bin_r_s, bin_r_t[i], side='right') - 1
                 j1 = np.searchsorted(bin_r_s, bin_r_t[i + 1], side='right')
@@ -176,7 +201,7 @@ if __name__ == "__main__":
         downSampleRange = np.arange(0, maxRange, rangeStep)
         downSamplePing = np.arange(0, n_pings, pingStep)
 
-        gridder = NPGridder(downSampleRange, sampleRange, downSamplePing, samplePings)
+        gridder = ZarrGridder(downSampleRange, sampleRange, downSamplePing, samplePings)
 
         regrid_sv_s_pings = gridder.regrid(sv_s)
         # Project result to old gridd
