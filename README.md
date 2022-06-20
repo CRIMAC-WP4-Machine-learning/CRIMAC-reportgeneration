@@ -36,10 +36,10 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 2. Choose the threshold for the classes: 
 
     ```bash
-    --env THRESHOLD=0.8
+    --env THRESHOLD=-80
     ```
 
-4. Select the horizontal integration type:
+3. Select the horizontal integration type:
 
     ```bash
     --env HOR_INTEGRATION_TYPE=ping
@@ -50,12 +50,22 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
     ```
 
-5. Select the vertical integration type:
+
+4. Select the vertical integration type:
 
     ```bash
     --env VERT_INTEGRATION_TYPE=range
 
     --env VERT_INTEGRATION_TYPE=depth
+
+    ```
+
+5. Select the vertical integration start and stop limits:
+
+    ```bash
+    --env CHANNEL_DEPTH_START=10
+
+    --env CHANNEL_DEPTH_END=500
 
     ```
 

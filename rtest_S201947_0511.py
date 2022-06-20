@@ -48,7 +48,7 @@ main_freq = 38000  # The frequency to integrate (could be a list in the future)
 #
 # Do the regridding
 #
-rep = rg.Reportgenerator(grid_file_name,
+with rg.Reportgenerator(grid_file_name,
                          pred_file_name,
                          bot_file_name,
                          report_file_name,
@@ -59,11 +59,10 @@ rep = rg.Reportgenerator(grid_file_name,
                          PingAxisIntervalUnit,
                          PingAxisInterval,
                          ChannelDepthStart,
-                         ChannelDepthEnd)
+                         ChannelDepthEnd) as rep:
 
-rep.save(report_file_name)
-rep.save(report_file_name+'.png')
-rep.cleanup()
+    rep.save(report_file_name)
+    rep.save(report_file_name+'.png')
 
 #
 # Saving to ICESAcoustic format

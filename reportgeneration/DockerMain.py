@@ -36,7 +36,6 @@ class DockerMain :
         self.main_freq = float(os.getenv('MAIN_FREQ', 38000))
         self.ChannelDepthStart = float(os.getenv('CHANNEL_DEPTH_START', 0))
         self.ChannelDepthEnd = float(os.getenv('CHANNEL_DEPTH_END', 500))
-
         self.data_input_name = os.getenv('DATA_INPUT_NAME', None)
         self.pred_input_name = os.getenv('PRED_INPUT_NAME', None)
         self.bot_input_name = os.getenv('BOT_INPUT_NAME', None)
@@ -66,10 +65,6 @@ class DockerMain :
 
         if not isinstance(self.threshold, float):
             Log().error('THRESHOLD needs to be float, got {}'.format(type(self.threshold)))
-            return False
-
-        if self.threshold<0 or self.threshold>1:
-            Log().error('THRESHOLD needs to be float [0,1], got {}'.format(self.threshold))
             return False
 
         valid_hitype = ['ping', 'time','nmi']
@@ -137,7 +132,7 @@ class DockerMain :
 
         out_file_name = '{}{}{}'.format(self.dataout, os.sep, self.output_name)
 
-        rg = Reportgenerator(
+        with Reportgenerator(
             grid_file_name,
             pred_file_name,
             bot_file_name,
@@ -150,14 +145,12 @@ class DockerMain :
             self.histep,
             self.ChannelDepthStart,
             self.ChannelDepthEnd
-        )
+        ) as rg:
 
-        rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
+            rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
 
-        if self.write_png is not None:
-            rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
-
-        rg.cleanup()
+            if self.write_png is not None:
+                rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
 
 
 
