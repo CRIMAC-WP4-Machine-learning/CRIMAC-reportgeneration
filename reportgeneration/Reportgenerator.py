@@ -78,14 +78,13 @@ class Reportgenerator:
             if bottomDepth is None:
                 BottomDepth = bottomRange.groupby_bins('time', ekgridder.ping_time).mean()
 
-
             rg = ekgridder.regrid()
 
             if vtype == 'depth':
                 rg = rg.rename({'range': 'depth'})
 
             rg = rg.assign_coords(category=[cat])
-            rg = rg.assign_coords(BottomDepth=("ping_time", BottomDepth))
+            rg = rg.assign_coords(BottomDepth=("ping_time", np.append(BottomDepth.values, np.NaN)))
             self.worker_data.append(rg)
 
         self.ds = None
@@ -268,8 +267,7 @@ class Reportgenerator:
 
         # Ruben: Is this log distance? check this.
         # Arne Johannes: should we also have a Distance2?
-        # This causes problem when saving, why?
-        #ds = ds.assign_coords(Distance=("Time", ds.distance[0, :].values))
+
         distance = ds.distance[0, :].values
         ds = ds.drop('distance') # This needs to be dropped due to new coordinate Distance
         ds = ds.assign_coords(Distance=("Time", distance))
