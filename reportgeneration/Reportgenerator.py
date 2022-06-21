@@ -49,7 +49,9 @@ class Reportgenerator:
             Log().info('Starting new outputfile')
 
         bottomRange = self.extractRangeToBottom(zarr_bot)
-
+        bottomRange = xr.DataArray(bottomRange, coords={'time': (['time'], zarr_pred.ping_time.values)},
+                                   dims=['time'])
+        bottomDepth = None
         self.worker_data = []
 
         for cat in zarr_pred["annotation"]["category"]:
@@ -60,6 +62,8 @@ class Reportgenerator:
 
             if vtype == 'depth':
                 masked_sv = self.rangeToDepthCorrection(masked_sv)
+                if bottomDepth is None:
+                    bottomRange += (masked_sv['transducer_draft'] + masked_sv['heave']).values
                 # Range is now depth
                 masked_sv['range'] = masked_sv['range'] + masked_sv['transducer_draft'][0].values
 
@@ -70,13 +74,18 @@ class Reportgenerator:
                 break
 
             Log().info(f'Gridding category: {cat.values.flatten()[0]}')
+
+            if bottomDepth is None:
+                BottomDepth = bottomRange.groupby_bins('time', ekgridder.ping_time).mean()
+
+
             rg = ekgridder.regrid()
 
             if vtype == 'depth':
                 rg = rg.rename({'range': 'depth'})
 
             rg = rg.assign_coords(category=[cat])
-
+            rg = rg.assign_coords(BottomDepth=("ping_time", BottomDepth))
             self.worker_data.append(rg)
 
         self.ds = None
@@ -160,7 +169,7 @@ class Reportgenerator:
         # Find range to bottom
         range = bot_['range'].isel(range=botIdx)
 
-        return range
+        return range.values
 
     def applyMask(self, data=None, pred=None, cat=None, freq=38000):
 
@@ -245,7 +254,6 @@ class Reportgenerator:
         Longitude2 = np.append(ds.Longitude[1:].values, np.NaN)  # Address last point
         Origin = np.repeat("start", N)
         Origin2 = np.repeat("end", N)
-        BottomDepth = np.repeat(np.nan, N)  # Needs to be added from input data. Vi skal ha range i dataen
         Validity = np.repeat("V", N)
         # Upper depth of the integrator should use the ChannelDepthStart
         ChannelDepthLower = np.append(ds.ChannelDepthUpper[1:].values, np.NaN)  # Adress end point
@@ -254,7 +262,6 @@ class Reportgenerator:
         ds = ds.assign_coords(Longitude2=("Time", Longitude2))
         ds = ds.assign_coords(Origin=("Time", Origin))
         ds = ds.assign_coords(Origin2=("Time", Origin2))
-        ds = ds.assign_coords(BottomDepth=("Time", BottomDepth))
         ds = ds.assign_coords(Validity=("Time", Validity))
 
         ds = ds.assign_coords(ChannelDepthLower=("ChannelDepthUpper", ChannelDepthLower))
