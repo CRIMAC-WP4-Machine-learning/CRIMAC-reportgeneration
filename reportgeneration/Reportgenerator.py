@@ -55,7 +55,7 @@ class Reportgenerator:
         bottomDepth = None
         self.worker_data = []
 
-        for cat in zarr_pred["annotation"]["category"][0:1]:
+        for cat in zarr_pred["annotation"]["category"]:
 
             zarr_grid = xr.where(zarr_grid < np.power(10, SvThreshold/10), 0, zarr_grid)
 
