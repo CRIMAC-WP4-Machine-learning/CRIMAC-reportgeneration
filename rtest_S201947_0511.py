@@ -4,8 +4,8 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
 
-baseDir = r'/media/hd2/Data/CRIMAC/Reportgen'
-#baseDir = r'C:\Users\ruben\work\ResilioSync\Dev\Proj\2019Q3-CRIMAC\Data'
+#baseDir = r'/media/hd2/Data/CRIMAC/Reportgen'
+baseDir = r'C:\Users\ruben\work\ResilioSync\Dev\Proj\2019Q3-CRIMAC\Data'
 srcDir = baseDir + r'/00Raw/S2019847_0511/2019/S2019847_0511/ACOUSTIC/GRIDDED'
 dstDir = baseDir + r'/02Gridded/S2019847_0511'
 lufDir = baseDir + r'/00Raw/S2019847_0511/2019/S2019847_0511/ACOUSTIC'
@@ -61,8 +61,9 @@ with rg.Reportgenerator(grid_file_name,
                          ChannelDepthStart,
                          ChannelDepthEnd) as rep:
 
-    rep.save(report_file_name)
-    rep.save(report_file_name+'.png')
+    rep.saveGridd(report_file_name)
+    rep.saveImages(report_file_name+'.png')
+    rep.saveReport(report_file_name+'.csv')
 
 #
 # Saving to ICESAcoustic format

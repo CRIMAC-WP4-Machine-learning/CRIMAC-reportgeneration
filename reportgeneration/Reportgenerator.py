@@ -17,6 +17,7 @@ class Reportgenerator:
     def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
+        self.vstep = vstep
         self.htype = htype
         self.hstep = hstep
         self.out_fname = out_fname
@@ -54,7 +55,7 @@ class Reportgenerator:
         bottomDepth = None
         self.worker_data = []
 
-        for cat in zarr_pred["annotation"]["category"]:
+        for cat in zarr_pred["annotation"]["category"][0:1]:
 
             zarr_grid = xr.where(zarr_grid < np.power(10, SvThreshold/10), 0, zarr_grid)
 
@@ -302,7 +303,8 @@ class Reportgenerator:
 
         return ds
 
-    def save(self, fname):
+
+    def saveGridd(self,fname):
 
         file_path, file_ext = os.path.splitext(fname)
         file_ext = file_ext.lower()
@@ -320,8 +322,18 @@ class Reportgenerator:
                 Log().info(f'Writing gridded data to : {fname}')
                 self.ds.to_zarr(fname, mode='w', encoding=encoding)
                 Log().info(f'Done writing file {fname}')
+        else:
+            Log().error('{} format not supported'.format(fname[-4:]))
 
-        elif file_ext == '.png':
+    def saveImages(self, fname):
+
+        file_path, file_ext = os.path.splitext(fname)
+        file_ext = file_ext.lower()
+
+        if self.getGridd() is None:
+            return
+
+        if file_ext == '.png':
 
             vmax = -20
             vmin = -80
@@ -362,6 +374,24 @@ class Reportgenerator:
         else:
             Log().error('{} format not supported'.format(fname[-4:]))
 
+    def saveReport(self, fname):
+
+        file_path, file_ext = os.path.splitext(fname)
+        file_ext = file_ext.lower()
+
+        if self.getGridd() is None:
+            return
+
+        if file_ext == '.csv':
+
+            ds = self.ds.copy()
+            ds['value'] = ds['value'] * 4 * np.pi * 1852**2 * self.vstep
+            df = self.ds.to_dataframe()
+            # Add the attributes to the df
+            for item in list(self.ds.attrs.items()):
+                df[item[0]] = item[1]
+            # Save report to pandas tidy file
+            df.to_csv(fname + '.csv', index=True)
 
     def __enter__(self):
         return self
