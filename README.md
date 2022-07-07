@@ -80,7 +80,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
 ## Example
 
-# Image
+### Image
 
 Build image from Dockerfile 
 
@@ -90,7 +90,7 @@ or pull from dockerhub
 
 `docker pull crimac/reportgenerator`
 
-# Run container
+### Run container
 
 Example using default parameters
 
