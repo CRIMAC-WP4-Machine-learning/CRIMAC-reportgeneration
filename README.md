@@ -48,7 +48,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
     ```bash
     --env THRESHOLD=-100
 
-    --env CLASSTRHRESHOLD=0.8 (not implemented)
+    --env CLASSTRHRESHOLD=0.8 (only necessary if predictions are not binary, not implemented)
     
     ```
 
@@ -78,9 +78,52 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
     ```
 
+## Example
 
+# Image
 
+Build image from Dockerfile 
 
+`docker build --tag reportgenerator .`
 
+or pull from dockerhub
 
+`docker pull crimac/reportgenerator`
 
+# Run container
+
+Example using default parameters
+
+```bash
+export DATAIN='/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/'
+
+export DATAOUT='/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/'
+
+export SURVEY='S2019847_0511' # Assumes that ${SURVEY}_sv.zarr file exists
+
+export PREDICTIONFILE_1='${SURVEY}_labels.zarr'
+
+export REPORTFILE_1='${SURVEY}_report_1.zarr'
+
+export MODEL='/mnt/c/DATAscratch/crimac-scratch/NR_Unet'
+
+export MODELFILE='paper_v2_heave_2.pt'
+
+docker run -rm -it --name reportgenerator \
+
+-v "${DATAIN}/ACOUSTIC/GRIDDED":/datain \
+
+-v "${DATAIN}/ACOUSTIC/PREDICTIONS":/predin \
+
+-v "${DATAOUT}/ACOUSTIC/REPORTS"/:/dataout \
+
+--security-opt label=disable \
+
+--env SURVEY=$SURVEY \
+
+--env PREDICTIONFILE=$PREDICTIONFILE \
+
+--env REPORTFILE=$REPORTFILE \
+
+reportgenerator
+```

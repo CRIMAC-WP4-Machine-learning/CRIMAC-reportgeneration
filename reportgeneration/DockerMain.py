@@ -51,6 +51,7 @@ Type = os.getenv('TYPE', 'C')
 Unit = os.getenv('UNIT', 'm2nmi-2')
 main_freq = os.getenv('MAIN_FREQ', 38000)
 output_type = os.getenv('OUTPUT_TYPE', 'zarr')
+classthreshold = os.getenv('CLASSTRHRESHOLD', 0.8)
 
 #
 # Do the regridding
