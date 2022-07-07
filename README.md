@@ -1,8 +1,7 @@
 # This repository contain the code to generate the reports from preprocessed CRIMAC files
 
 A docker image to regrid and generate reports from preprocessed CRIMAC files. The pre-processed data is stored as a  `zarr`/`netcdf` files on disk per survey,
-and the energy is allocated to classes based on interpretation masks on the same grid. The interpretation masks per class has a probability 
-from 0-1, typically from softmax outputs but can also be other probabilities in the same range. The pixel are associated to a class based on a threshold (input) 
+and the energy is allocated to classes based on interpretation masks on the same grid. The interpretation masks per class is probaility, and typically generated  from softmax outputs but can also be other probabilities in the same range. The pixel are associated to a class based on a threshold (input) 
 on the probability.
 
 The ouput is the standard ICES data format used in the ICES acoustic database and is a standard input to the StoX index cacluation program. The XSD schema for 
@@ -28,102 +27,60 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
 1. Four directories need to be mounted:
 
-    1. `/datain` should be mounted to the data directory where the preprocessed data files are located.
-    2. `/dataout` should be mounted to the directory where the reports are written.
-    3. `/predin` should be mounted to the directory where the zarr prediction masks are located.
-    4. `/bottomin` should be mounted to the directory where the zarr bottom detection data is located (_optional_).
+    1. `/datain` should be mounted to the data directory where the preprocessed data files are located (_sv and _bottom).
+    2. `/predin` should be mounted to the directory where the zarr prediction masks are located.
+    3. `/dataout` should be mounted to the directory where the reports are written.
 
-2. Choose the threshold for the classes: 
-
-    ```bash
-    --env THRESHOLD=-80
-    ```
-
-3. Select the horizontal integration type:
+2. Set the survey and file names
 
     ```bash
-    --env HOR_INTEGRATION_TYPE=ping
-
-    --env HOR_INTEGRATION_TYPE=time
+    --env SURVEY=S2019847_0511
     
-    --env HOR_INTEGRATION_TYPE=nmi
+    --env PREDICTIONFILE=S2019847_0511_labels.zarr
+
+    --env REPORTFILE=S2019847_0511_predictions_1_report.zarr
 
     ```
+ 
 
-
-4. Select the vertical integration type:
+2. Choose the integration threshold:
 
     ```bash
-    --env VERT_INTEGRATION_TYPE=range
+    --env THRESHOLD=-100
 
-    --env VERT_INTEGRATION_TYPE=depth
-
+    --env CLASSTRHRESHOLD=0.8 (not implemented)
+    
     ```
 
-5. Select the vertical integration start and stop limits:
+3. Select the horizontal integration parameters:
 
     ```bash
-    --env CHANNEL_DEPTH_START=10
+    --env PING_AXIS_INTERVAL_TYPE=distance (pings, seconds,distance)
 
+    --env PING_AXIS_INTERVAL_ORIGIN=start
+
+    --env PING_AXIS_INTERVAL_UNIT=nmi
+
+    --env PING_AXIS_INTERVAL=0.1
+    
+    ```
+
+4. Select the vertical integration parameters:
+
+    ```bash
+    --env CHANNEL_THICKNESS=5
+    
+    --env CHANNEL_TYPE=depth (depth, range)
+    
+    --env CHANNEL_DEPTH_START=0
+    
     --env CHANNEL_DEPTH_END=500
 
     ```
 
-6. Choose the vertical integration grid in depth (VERT_INTEGRATION_TYPE=range) or range (VERT_INTEGRATION_TYPE=depth) and the 
-horizontal integration grid in nautical miles (INTEGRATION_TYPE=distance) or seconds (INTEGRATION_TYPE=time): 
 
-    ```bash
-    --env HOR_INTEGRATION_STEP=10 # (pings, seconds,nautical miles )
-    
-    --env VERT_INTEGRATION_STEP=1 # (meters)
 
-    ```
-7. Chose the integrator
-    only conservative
 
-8. Select file name output (optional, only .zarr)
 
-    ```bash
-    --env OUTPUT_NAME=S2020842.zarr
-    ```
 
-9. Set if we want a visual overview of the integrated grid (in a PNG format image).
 
-    ```bash
-    --env WRITE_PNG=overview.png # No file is generated if left out
-    ```
-
-## Example
-
-```bash
-export SURVEY='S2019847'
-export SURVEYDIR='/localscratch_hdd/crimac/2019/S2019847'
-export TMPSURVEY='/localscratch_hdd/nilsolav/2019/S2019847'
-
-docker pull crimac/reportgeneration
-docker run -rm -it --name reportgenerator
--v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain
--v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin
--v "$SURVEYDIR/ACOUSTIC/GRIDDED":/botin
--v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout
---security-opt label=disable
---env DATA_INPUT_NAME="${SURVEY}_sv.zarr"
---env PRED_INPUT_NAME="${SURVEY}_labels.zarr"
---env BOT_INPUT_NAME="${SURVEY}_bottom.zarr"
---env OUTPUT_NAME="${SURVEY}_report_0.zarr"
---env WRITE_PNG="${SURVEY}_report_0.png"
---env THRESHOLD=0.8
---env MAIN_FREQ=38000
---env CHANNEL_DEPTH_START=0
---env CHANNEL_DEPTH_END=500
---env HOR_INTEGRATION_TYPE=ping
---env HOR_INTEGRATION_STEP=100
---env VERT_INTEGRATION_TYPE=range
---env VERT_INTEGRATION_STEP=10
-reportgenerator
-
-```
-
-```bash
-docker run -rm -it --name reportgenerator -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/datain -v "$SURVEYDIR/ACOUSTIC/GRIDDED":/predin -v "$TMPSURVEY/ACOUSTIC/REPORTS"/:/dataout --security-opt label=disable --env DATA_INPUT_NAME="${SURVEY}_sv.zarr" --env PRED_INPUT_NAME="${SURVEY}_labels.zarr" --env OUTPUT_NAME="${SURVEY}_report_0.zarr" --env WRITE_PNG="${SURVEY}_report_0.png" --env THRESHOLD=0.8 --env MAIN_FREQ=38000 --env CHANNEL_DEPTH_START=0 --env CHANNEL_DEPTH_END=0 --env HOR_INTEGRATION_TYPE=ping --env HOR_INTEGRATION_STEP=100 --env VERT_INTEGRATION_TYPE=range --env VERT_INTEGRATION_STEP=10 reportgenerator
-```

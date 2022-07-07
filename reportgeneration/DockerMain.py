@@ -1,190 +1,95 @@
-
 import os
-import traceback
-import sys
-import shutil
-import dask
-from dask.distributed import Client
-from Logger import Logger as Log
-from reportgeneration.Reportgenerator import Reportgenerator
+os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration')
+os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration')
+print(os.getcwd())
 
+import reportgeneration.Reportgenerator as rg
+import xarray as xr
+import matplotlib.pyplot as plt
+import numpy as np
 
-class DockerMain :
+# If outside docker:
+if True:
+    
+    dir0 = '/mnt/c/DATAscratch/crimac-scratch/'
+    dirs = [dir0+'2019/S2019847_0511/ACOUSTIC/GRIDDED/',
+            dir0+'2019/S2019847_0511/ACOUSTIC/GRIDDED/', 
+            dir0+'2019/S2019847_0511/ACOUSTIC/REPORTS/']
+else:
+    dirs = ['/datain', '/predin', '/dataout']
 
-    def __init__(self):
+# Set file directories
+for d in dirs:
+    _dir = os.path.expanduser(d)
+    if not os.path.exists(_dir):
+        print('{} could not be found'.format(_dir))
+datain, predin, dataout = dirs
 
-        self.goodtogo = self.extractAndCheckInputParameters()
+# Generate the file references
+grid_file_name = datain+os.getenv('SURVEY'+'_sv.zarr', 'S2019847_0511_sv.zarr')
+pred_file_name = predin+os.getenv('PREDICTIONFILE',
+                                  'S2019847_0511_labels.zarr')
+bot_file_name = datain+os.getenv('SURVEY'+'_bottom.zarr', 'S2019847_0511_bottom.zarr')
+report_file_name = dataout+os.getenv('REPORTFILE',
+                                     'S2019847_0511_predictions_1_report.zarr')
 
+# Env vars
+PingAxisIntervalType = os.getenv('PING_AXIS_INTERVAL_TYPE', 'distance')
+PingAxisIntervalOrigin = os.getenv('PING_AXIS_INTERVAL_ORIGIN', 'start')
+PingAxisIntervalUnit = os.getenv('PING_AXIS_INTERVAL_UNIT', 'nmi')
+PingAxisInterval = os.getenv('PING_AXIS_INTERVAL', 0.1)
 
-    def extractAndCheckInputParameters(self):
+# Channel
+ChannelDepthStart = os.getenv('CHANNEL_DEPTH_START', 0)
+ChannelDepthEnd = os.getenv('CHANNEL_DEPTH_END', 500)
+ChannelThickness = os.getenv('CHANNEL_THICKNESS', 5)
+ChannelType = os.getenv('CHANNEL_TYPE', 'depth')
 
-        self.bottomin = os.path.expanduser('/bottomin')
+# Values
+SvThreshold = os.getenv('SV_THRESHOLD', -100)
+Type = os.getenv('TYPE', 'C')
+Unit = os.getenv('UNIT', 'm2nmi-2')
+main_freq = os.getenv('MAIN_FREQ', 38000)
+output_type = os.getenv('OUTPUT_TYPE', 'zarr')
 
-        mdirs = []
-        for d in ['/datain', '/predin', '/dataout']:
+#
+# Do the regridding
+#
+with rg.Reportgenerator(grid_file_name,
+                        pred_file_name,
+                        bot_file_name,
+                        report_file_name,
+                        main_freq,
+                        SvThreshold,
+                        ChannelType,
+                        ChannelThickness,
+                        PingAxisIntervalUnit,
+                        PingAxisInterval,
+                        ChannelDepthStart,
+                        ChannelDepthEnd) as rep:
+    
+    rep.saveGridd(report_file_name)
+    rep.saveImages(report_file_name+'.png')
+    rep.saveReport(report_file_name+'.csv')
 
-            _dir = os.path.expanduser(d)
-            if not os.path.exists(_dir):
-                Log().error('{} could not be found'.format(_dir))
-                return False
+#
+# Saving to ICESAcoustic format
+#
 
-            mdirs.append(_dir)
+# Reading the report & original data
+grid = xr.open_zarr(grid_file_name)
+pred = xr.open_zarr(pred_file_name)
+report = xr.open_zarr(report_file_name)
 
-        self.datain, self.predin, self.dataout = mdirs
+#
+# Flatten the data to a dataframe and write to file
+#
 
-        self.output_type = os.getenv('OUTPUT_TYPE', 'zarr')
-        self.main_freq = float(os.getenv('MAIN_FREQ', 38000))
-        self.ChannelDepthStart = float(os.getenv('CHANNEL_DEPTH_START', 0))
-        self.ChannelDepthEnd = float(os.getenv('CHANNEL_DEPTH_END', 500))
-        self.data_input_name = os.getenv('DATA_INPUT_NAME', None)
-        self.pred_input_name = os.getenv('PRED_INPUT_NAME', None)
-        self.bot_input_name = os.getenv('BOT_INPUT_NAME', None)
-        self.output_name = os.getenv('OUTPUT_NAME', None)
-        self.write_png = os.getenv('WRITE_PNG', None)
-        self.threshold = float(os.getenv('THRESHOLD', None))
-        self.hitype = os.getenv('HOR_INTEGRATION_TYPE', None)
-        self.histep = float(os.getenv('HOR_INTEGRATION_STEP', None))
-        self.vitype = os.getenv('VERT_INTEGRATION_TYPE', None)
-        self.vistep = float(os.getenv('VERT_INTEGRATION_STEP', None))
+df = report.to_dataframe()
+# Add the attributes to the df
+for item in list(report.attrs.items()):
+    df[item[0]] = item[1]
+# Save report to pandas tidy file
+df.to_csv(report_file_name+'.csv', index=True)
 
-        if self.data_input_name is None:
-            Log().error('DATA_INPUT_NAME no set')
-            return False
-
-        if self.pred_input_name is None:
-            Log().error('PRED_INPUT_NAME no set')
-            return False
-
-        if self.output_name is None:
-            Log().error('OUTPUT_NAME no set')
-            return False
-
-        if self.threshold is None:
-            Log().error('THRESHOLD no set')
-            return False
-
-        if not isinstance(self.threshold, float):
-            Log().error('THRESHOLD needs to be float, got {}'.format(type(self.threshold)))
-            return False
-
-        valid_hitype = ['ping', 'time','nmi']
-        if self.hitype is None or self.hitype not in ['ping', 'time','nmi']:
-            Log().error(f'HOR_INTEGRATION_TYPE no set or incorrect')
-            Log().info(f'Types set to {self.hitype}')
-            Log().info(f'Valied types : {valid_hitype}')
-
-            return False
-
-        if self.histep is None or not isinstance(self.histep,(float, int)):
-            Log().error('HOR_INTEGRATION_STEP no set correctly')
-            Log().info(f'Types set to {self.histep}')
-            Log().info('Type must be float or int')
-            return False
-
-        valied_vitypes = ['range', 'depth']
-        if self.vitype is None or self.vitype not in valied_vitypes:
-            Log().error(f'VERT_INTEGRATION_TYPE no set or incorrect')
-            Log().info(f'Types set to {self.vitype}')
-            Log().info(f'Valied types : {valied_vitypes}')
-            return False
-
-        if self.vistep is None or not isinstance(self.vistep, (float, int)):
-            Log().error('VERT_INTEGRATION_STEP no set correctly set')
-            Log().info(f'Types set to {self.vistep}')
-            Log().info('Type mist be float or int')
-            return False
-
-        return True
-
-    def usage(self):
-        return \
-            'docker run -it --name reportgenerator\n \
-            -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PREPROCESSED:/datain\n \
-            -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/PRDICTIONS:/predin\n \
-            -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/BOTTOM:/botin (optional)\n \
-            -v /data/cruise_data/2020/S2020842_PHELMERHANSSEN_1173/ACOUSTIC/OUT:/dataout\n \
-            --security-opt label=disable\n \
-            --env DATA_INPUT_NAME=input_filename.zarr\n \
-            --env PRED_INPUT_NAME=prediction_filename.zarr\n \
-            --env BOT_INPUT_NAME=bottom_filename.zarr (optional)\n\
-            --env OUTPUT_NAME=result.zarr\n\
-            --env WRITE_PNG=result.png\n \
-            --env THRESHOLD=-100\n \
-            --env MAIN_FREQ = 38000\n \
-            --env CHANNEL_DEPTH_START = 0\n \
-            --env CHANNEL_DEPTH_END = 500\n \
-            --env HOR_INTEGRATION_TYPE =  [ping | time | nmi]\n  \
-            --env HOR_INTEGRATION_STEP = 100\n \
-            --env VERT_INTEGRATION_TYPE=[range | nmi]\n \
-            --env VERT_INTEGRATION_STEP=10\n \
-            reportgenerator'
-
-    def run(self):
-
-        grid_file_name = '{}{}{}'.format(self.datain, os.sep, self.data_input_name)
-
-        if self.bot_input_name is None:
-            bot_file_name = None
-        else:
-            bot_file_name = '{}{}{}'.format(self.bottomin, os.sep, self.bot_input_name)
-
-        pred_file_name = '{}{}{}'.format(self.predin, os.sep, self.pred_input_name)
-
-        out_file_name = '{}{}{}'.format(self.dataout, os.sep, self.output_name)
-
-        with Reportgenerator(
-            grid_file_name,
-            pred_file_name,
-            bot_file_name,
-            out_file_name,
-            self.main_freq,
-            self.threshold,
-            self.vitype,
-            self.vistep,
-            self.hitype,
-            self.histep,
-            self.ChannelDepthStart,
-            self.ChannelDepthEnd
-        ) as rg:
-
-            rg.save('{}{}{}'.format(self.dataout, os.sep, self.output_name))
-
-            if self.write_png is not None:
-                rg.save('{}{}{}'.format(self.dataout, os.sep, self.write_png))
-
-
-
-if __name__ == '__main__':
-
-    Log(loggerFileName = os.path.expanduser('/dataout'))
-
-    if os.getenv('DEBUG', 'false') == 'true':
-        Log().error('Press enter...')
-        input()
-        sys.exit(0)
-
-    dm = DockerMain()
-
-    if dm.goodtogo:
-
-        # Setting dask
-        tmp_dir = os.path.expanduser(dm.dataout + '/tmp')
-
-        dask.config.set({'temporary_directory': tmp_dir})
-        client = Client()
-        Log().info(client)
-
-        try:
-            dm.run()
-        except :
-            Log().error(traceback.format_exc())
-
-        client.close()
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-
-    else :
-        Log().error('Error occurred, exiting')
-        Log().error('Usage :/n{}'.format(dm.usage()))
-
-    sys.exit(0)
+# That's it
