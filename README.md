@@ -96,34 +96,18 @@ Example using default parameters
 
 ```bash
 export DATAIN='/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/'
-
 export DATAOUT='/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/'
-
 export SURVEY='S2019847_0511' # Assumes that ${SURVEY}_sv.zarr file exists
-
-export PREDICTIONFILE_1='${SURVEY}_labels.zarr'
-
-export REPORTFILE_1='${SURVEY}_report_1.zarr'
-
-export MODEL='/mnt/c/DATAscratch/crimac-scratch/NR_Unet'
-
-export MODELFILE='paper_v2_heave_2.pt'
+export PREDICTIONFILE='${SURVEY}_labels.zarr'
+export REPORTFILE='${SURVEY}_report_1.zarr'
 
 docker run -rm -it --name reportgenerator \
-
 -v "${DATAIN}/ACOUSTIC/GRIDDED":/datain \
-
 -v "${DATAIN}/ACOUSTIC/PREDICTIONS":/predin \
-
 -v "${DATAOUT}/ACOUSTIC/REPORTS"/:/dataout \
-
 --security-opt label=disable \
-
 --env SURVEY=$SURVEY \
-
 --env PREDICTIONFILE=$PREDICTIONFILE \
-
 --env REPORTFILE=$REPORTFILE \
-
 reportgenerator
 ```
