@@ -33,7 +33,7 @@ class EKGridder(XGridder):
             if self.PingAxisIntervalOrigin == 'start':
                 tbins = xr.DataArray(np.arange(0, len(data['ping_time']), step))
             if self.PingAxisIntervalOrigin == 'middle':
-                tbins = xr.DataArray(np.arange(step/2, len(data['ping_time']), step))
+                tbins = xr.DataArray(np.arange(-step/2, len(data['ping_time']), step))
 
             self.ping_time = data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
 
@@ -43,7 +43,7 @@ class EKGridder(XGridder):
             if self.PingAxisIntervalOrigin == 'start':
                 tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
             if self.PingAxisIntervalOrigin == 'middle':
-                tbins = xr.DataArray(np.arange(step/2, sbins[-1].compute(), step))
+                tbins = xr.DataArray(np.arange(-step/2, sbins[-1].compute(), step))
 
             self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(int(step), 's'))
 
@@ -56,7 +56,7 @@ class EKGridder(XGridder):
             if self.PingAxisIntervalOrigin == 'start':
                 tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
             if self.PingAxisIntervalOrigin == 'middle':
-                tbins = xr.DataArray(np.arange(data['distance'][0]+step/2, data['distance'][-1], step))
+                tbins = xr.DataArray(np.arange(data['distance'][0]-step/2, data['distance'][-1], step))
 
             sec = self.calckTimeInSeconds(data['ping_time'])
             isec = np.interp(tbins.compute().values, sbins.values, sec)
