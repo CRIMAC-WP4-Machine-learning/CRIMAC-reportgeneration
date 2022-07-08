@@ -9,10 +9,10 @@ from reportgeneration.XGridder import XGridder
     Lossless gridding on EKdata from gridder    
 """
 class EKGridder(XGridder):
-    def __init__(self, data, v_integration_type='range', v_step=50, h_integration_type='ping', h_step=10, ChannelDepthStart=0, ChannelDepthEnd=500):
+    def __init__(self, data, v_integration_type='range', v_step=50,PingAxisIntervalOrigin='start', h_integration_type='ping', h_step=10, ChannelDepthStart=0, ChannelDepthEnd=500):
         self.ping_time = None
         self.distance = None
-
+        self.PingAxisIntervalOrigin = PingAxisIntervalOrigin
         data = data.sel(range=slice(ChannelDepthStart, ChannelDepthEnd))
 
         source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step)
@@ -29,12 +29,21 @@ class EKGridder(XGridder):
         tbins = None
         if _type == 'ping':
             sbins = xr.DataArray(np.arange(0, len(data['ping_time'])))
-            tbins = xr.DataArray(np.arange(0, len(data['ping_time']), step))
+
+            if self.PingAxisIntervalOrigin == 'start':
+                tbins = xr.DataArray(np.arange(0, len(data['ping_time']), step))
+            if self.PingAxisIntervalOrigin == 'middle':
+                tbins = xr.DataArray(np.arange(step/2, len(data['ping_time']), step))
+
             self.ping_time = data['ping_time'].isel(ping_time=np.arange(0, len(data['ping_time']), step).astype(np.int32)).values
 
         elif _type == 'time':
             sbins = self.calckTimeInSeconds(data['ping_time'])
-            tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
+
+            if self.PingAxisIntervalOrigin == 'start':
+                tbins = xr.DataArray(np.arange(0, sbins[-1].compute(), step))
+            if self.PingAxisIntervalOrigin == 'middle':
+                tbins = xr.DataArray(np.arange(step/2, sbins[-1].compute(), step))
 
             self.ping_time = np.arange(data['ping_time'][0].compute().values, data['ping_time'][-1].compute().values,np.timedelta64(int(step), 's'))
 
@@ -43,7 +52,11 @@ class EKGridder(XGridder):
             sbins = data['distance']
 
             # Last distance can be nan, use previous
-            tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
+
+            if self.PingAxisIntervalOrigin == 'start':
+                tbins = xr.DataArray(np.arange(data['distance'][0], data['distance'][-1], step))
+            if self.PingAxisIntervalOrigin == 'middle':
+                tbins = xr.DataArray(np.arange(data['distance'][0]+step/2, data['distance'][-1], step))
 
             sec = self.calckTimeInSeconds(data['ping_time'])
             isec = np.interp(tbins.compute().values, sbins.values, sec)

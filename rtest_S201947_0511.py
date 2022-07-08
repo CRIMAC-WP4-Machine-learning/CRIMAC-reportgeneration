@@ -23,7 +23,7 @@ LSSS_report_file_name = lufDir +'/ListUserFile20__L2887.0-3069.3.xml'
 
 # Ping axis
 PingAxisIntervalType = "distance"  # see http://vocab.ices.dk/?ref=1455
-PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
+PingAxisIntervalOrigin = "middle"  # see http://vocab.ices.dk/?ref=1457
 PingAxisIntervalUnit = "nmi"  # see http://vocab.ices.dk/?ref=1456
 PingAxisInterval = 0.1
 # Ruben: refactor these to ICESAcoustic variable names:
@@ -56,6 +56,7 @@ with rg.Reportgenerator(grid_file_name,
                          SvThreshold,
                          ChannelType,
                          ChannelThickness,
+                         PingAxisIntervalOrigin,
                          PingAxisIntervalUnit,
                          PingAxisInterval,
                          ChannelDepthStart,

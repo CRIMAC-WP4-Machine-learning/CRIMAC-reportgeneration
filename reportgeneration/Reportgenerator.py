@@ -14,12 +14,13 @@ from Resources import Resources as Res
 
 class Reportgenerator:
 
-    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50, htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
+    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50,PingAxisIntervalOrigin='start', htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
         self.vstep = vstep
         self.htype = htype
         self.hstep = hstep
+        self.PingAxisIntervalOrigin = PingAxisIntervalOrigin
         self.out_fname = out_fname
         Res().setTmpDir(str(Path(self.out_fname).parent) + os.sep + 'tmp')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
@@ -68,7 +69,7 @@ class Reportgenerator:
                 # Range is now depth
                 masked_sv['range'] = masked_sv['range'] + masked_sv['transducer_draft'][0].values
 
-            ekgridder = EKGridder(masked_sv, vtype, vstep, htype, hstep, ChannelDepthStart, ChannelDepthEnd)
+            ekgridder = EKGridder(masked_sv, vtype, vstep, PingAxisIntervalOrigin, htype, hstep, ChannelDepthStart, ChannelDepthEnd)
             if ekgridder.target_h_bins.shape[0] <= 2:
                 self.worker_data = None
                 Log().info('Not enough data to make a grid.')
@@ -287,13 +288,12 @@ class Reportgenerator:
         elif self.htype=='time':
             PingAxisIntervalUnit = 'sec'
 
-        PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
 
         PingAxisInterval = self.hstep
 
         ds = ds.assign_attrs({
             "PingAxisIntervalType": PingAxisIntervalType,
-            "PingAxisIntervalOrigin": PingAxisIntervalOrigin,
+            "PingAxisIntervalOrigin": self.PingAxisIntervalOrigin, # see http://vocab.ices.dk/?ref=1457
             "PingAxisIntervalUnit": PingAxisIntervalUnit,
             "PingAxisInterval": PingAxisInterval,
             "Platform": "NaN",
@@ -384,14 +384,17 @@ class Reportgenerator:
 
         if file_ext == '.csv':
 
-            ds = self.ds.copy()
-            ds['value'] = ds['value'] * 4 * np.pi * 1852**2 * self.vstep
-            df = self.ds.to_dataframe()
-            # Add the attributes to the df
-            for item in list(self.ds.attrs.items()):
-                df[item[0]] = item[1]
-            # Save report to pandas tidy file
-            df.to_csv(fname + '.csv', index=True)
+            for cat in self.ds['SaCategory']:
+                ds = self.ds.sel(SaCategory=cat).copy()
+
+                ds['value'] = ds['value'] * 4 * np.pi * 1852**2 * self.vstep
+                df = self.ds.to_dataframe()
+                # Add the attributes to the df
+                for item in list(self.ds.attrs.items()):
+                    df[item[0]] = item[1]
+                # Save report to pandas tidy file
+
+                df.to_csv('{}_{}.csv'.format(file_path, cat.values), index=True)
 
     def __enter__(self):
         return self
