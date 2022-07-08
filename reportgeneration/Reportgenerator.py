@@ -224,8 +224,7 @@ class Reportgenerator:
 
             self.ds = xr.concat(self.worker_data, dim='category')
 
-            # Assume first bin in range is nan and last bin in range do not contain data from whole bin
-            r0 = self.ds[self.vtype].values[1]
+            r0 = self.ds[self.vtype].values[0]
             r1 = self.ds[self.vtype].values[-2]
             self.ds = self.ds.sel({self.vtype:slice(r0, r1)})
 
@@ -435,6 +434,7 @@ if __name__ == "__main__":
     parser.add_argument("--freq", type=float, help="Frequency to gridd")
     parser.add_argument("--depth_start", type=float, help="Start range/depth to integrate over (m)")
     parser.add_argument("--depth_end", type=float, help="End range/depth to integrate over (m)")
+    parser.add_argument("--PingAxisIntervalOrigin", type=str,choices=['start', 'middle'], help="Bin edge")
     parser.add_argument("--htype", type=str,choices=['ping', 'time' , 'nmi'], help="Type of horizontal integration")
     parser.add_argument("--hstep", type=float, help="Step unit for horizontal integration : #pings | seconds | nautical miles)")
     parser.add_argument("--vtype", type=str, choices=['range', 'depth'], help="Type of vertical integration")
@@ -451,14 +451,16 @@ if __name__ == "__main__":
         args.thr,
         args.vtype,
         args.vstep,
+        args.PingAxisIntervalOrigin,
         args.htype,
         args.hstep,
         args.depth_start,
         args.depth_end
     ) as rg:
 
-        rg.save(args.out)
-        rg.save(args.img)
+        rg.saveGridd(args.out)
+        rg.saveImages(args.img + '.png')
+        rg.saveReport(args.out + '.csv')
 
         gridd = rg.getGridd()
         if gridd is not None:
