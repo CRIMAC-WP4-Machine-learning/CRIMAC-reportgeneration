@@ -1,4 +1,6 @@
 import os
+import shutil
+
 #os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration')
 #os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration')
 #print(os.getcwd())
@@ -9,6 +11,12 @@ from Logger import Logger as Log
 
 Log().info('####### Setting up #######')
 
+#2022-08-10 09:17:02 INFO    : ####### Setting up #######
+#/datain/S2019847_0511_sv.zarr could not be found.
+#/predin/${SURVEY}_predictions_2.zarr could not be found.
+#/datain/S2019847_0511_bottom.zarr could not be found.
+#/dataout/${SURVEY}_report_2.zarr is set as report file name.
+
 # Set and check file directories
 dirs = ['/datain/', '/predin/', '/dataout/']
 datain, predin, dataout = dirs
@@ -18,12 +26,10 @@ for d in dirs:
         Log().error('####### {} could not be found #######'.format(_dir))
 
 # Generate the file references
-grid_file_name = datain+os.getenv('SURVEY'+'_sv.zarr', 'S2019847_0511_sv.zarr')
-pred_file_name = predin+os.getenv('PREDICTIONFILE',
-                                  'S2019847_0511_labels.zarr')
-bot_file_name = datain+os.getenv('SURVEY'+'_bottom.zarr', 'S2019847_0511_bottom.zarr')
-report_file_name = dataout+os.getenv('REPORTFILE',
-                                     'S2019847_0511_predictions_1_report.zarr')
+grid_file_name = datain+os.getenv('SURVEY')+'_sv.zarr'
+pred_file_name = predin+os.getenv('PREDICTIONFILE')
+bot_file_name = datain+os.getenv('SURVEY')+'_bottom.zarr'
+report_file_name = dataout+os.getenv('REPORTFILE')
 
 # Check if input files exist
 files = [grid_file_name, pred_file_name, bot_file_name]
@@ -34,6 +40,11 @@ for d in files:
     else:
         print('{} is available.'.format(_dir))        
 print('{} is set as report file name.'.format(report_file_name))
+
+# Delete old report
+if os.path.exists(report_file_name):
+    Log().info('####### Old report exist: deleting #######')
+    shutil.rmtree(report_file_name)
 
 print(' ')
 Log().info('####### Setting up env variables #######')
@@ -69,6 +80,21 @@ for i, _v in enumerate(v):
     print(vt[i]+': '+str(v[i])+' '+str(type(_v)))
 print(' ')
 
+Log().info('####### Check zarr file input size #######')
+
+grid = xr.open_zarr(grid_file_name)
+pred = xr.open_zarr(pred_file_name)
+Log().info('####### Check zarr file grid input size #######')
+print(grid.Dimensions)
+Log().info('####### Check zarr file prediction input size #######')
+print(pred)
+if bot_file_name is None:
+    zarr_bot = None
+else:
+    zarr_bot = xr.open_zarr(bot_file_name)
+    Log().info('####### Check zarr file bottom input size #######')
+    print(zarr_bot)
+
 #
 # Do the regridding
 #
@@ -94,8 +120,6 @@ with rg.Reportgenerator(grid_file_name,
 #
 
 # Reading the report & original data
-grid = xr.open_zarr(grid_file_name)
-pred = xr.open_zarr(pred_file_name)
 report = xr.open_zarr(report_file_name)
 
 #

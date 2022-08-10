@@ -84,11 +84,11 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
 Build image from Dockerfile 
 
-`docker build --tag reportgenerator .`
+`docker build --tag reportgeneration .`
 
 or pull from dockerhub
 
-`docker pull crimac/reportgenerator`
+`docker pull crimac/reportgeneration`
 
 ### Run container
 
@@ -101,7 +101,7 @@ export SURVEY='S2019847_0511' # Assumes that ${SURVEY}_sv.zarr file exists
 export PREDICTIONFILE='${SURVEY}_labels.zarr'
 export REPORTFILE='${SURVEY}_report_1.zarr'
 
-docker run -rm -it --name reportgenerator \
+docker run -rm -it --name reportgeneration \
 -v "${DATAIN}/ACOUSTIC/GRIDDED":/datain \
 -v "${DATAIN}/ACOUSTIC/PREDICTIONS":/predin \
 -v "${DATAOUT}/ACOUSTIC/REPORTS"/:/dataout \
@@ -109,5 +109,5 @@ docker run -rm -it --name reportgenerator \
 --env SURVEY=$SURVEY \
 --env PREDICTIONFILE=$PREDICTIONFILE \
 --env REPORTFILE=$REPORTFILE \
-reportgenerator
+reportgeneration:latest
 ```
