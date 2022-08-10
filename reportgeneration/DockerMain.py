@@ -84,15 +84,15 @@ Log().info('####### Check zarr file input size #######')
 
 grid = xr.open_zarr(grid_file_name)
 pred = xr.open_zarr(pred_file_name)
-Log().info('####### Check zarr file grid input size #######')
-print(grid.Dimensions)
-Log().info('####### Check zarr file prediction input size #######')
+Log().info('####### Check _sv.zarr input size #######')
+print(grid)
+Log().info('####### Check _pred.zarr input size #######')
 print(pred)
 if bot_file_name is None:
     zarr_bot = None
 else:
     zarr_bot = xr.open_zarr(bot_file_name)
-    Log().info('####### Check zarr file bottom input size #######')
+    Log().info('####### Check _bot.zarr input size #######')
     print(zarr_bot)
 
 #
