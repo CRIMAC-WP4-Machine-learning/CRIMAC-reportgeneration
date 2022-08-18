@@ -49,7 +49,9 @@ class EKGridder(XGridder):
 
         elif _type == 'nmi':
 
-            sbins = data['distance']
+            _sbins = data['distance']
+            # Remove NaNs from sbins
+            sbins = _sbins[~np.isnan(_sbins)]
 
             # Last distance can be nan, use previous
 
@@ -58,7 +60,7 @@ class EKGridder(XGridder):
             if self.PingAxisIntervalOrigin == 'middle':
                 tbins = xr.DataArray(np.arange(data['distance'][0]-step/2, data['distance'][-1], step))
 
-            sec = self.calckTimeInSeconds(data['ping_time'])
+            sec = self.calckTimeInSeconds(data['ping_time'][~np.isnan(_sbins)])
             isec = np.interp(tbins.compute().values, sbins.values, sec)
             mtime = [data['ping_time'].values[0]+np.timedelta64(int(np.round(t*1000)), 'ms') for t in isec]
             self.ping_time = np.array(mtime)

@@ -76,9 +76,29 @@ class Reportgenerator:
                 break
 
             Log().info(f'Gridding category: {cat.values.flatten()[0]}')
-
+            # Hack to avoid negative diff on ekgridder.ping_time
+            import pandas as pd
+            t = pd.Series(ekgridder.ping_time)
+            dif = t.diff().astype(int) < 0
+            dif[0] = False
+            ind = np.where(dif)
+            if not len(ind) == 0:
+                for _ind in ind:
+                    j = 0
+                    # Check if there are multiple negative time diffs
+                    while (t[_ind+j].values - t[_ind-1].values).astype(int) < 0:
+                        j = j+1
+                    if j > 1:
+                        print('Two consecutive negative diff values in data.')
+                    # Replace negative diff time with mean value
+                    print('before changing time vector:')
+                    print(t[_ind[0]-1:_ind[0]+j+1])
+                    t[_ind[0]] = t[[_ind[0]-1, _ind[0]+1]].mean()
+                    print('After changing time vector:')
+                    print(t[_ind[0]-1:_ind[0]+j+1])
+            
             if bottomDepth is None:
-                BottomDepth = bottomRange.groupby_bins('time', ekgridder.ping_time).mean()
+                BottomDepth = bottomRange.groupby_bins('time', t).mean()
 
             rg = ekgridder.regrid()
 
