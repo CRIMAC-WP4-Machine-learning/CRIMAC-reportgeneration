@@ -1,24 +1,18 @@
 import os
 import shutil
-
-#os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration')
-#os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration')
-#print(os.getcwd())
-
-import reportgeneration.Reportgenerator as rg
 import xarray as xr
+import zarr
+# import sys
+# os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration')
+# sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration')
+import reportgeneration.Reportgenerator as rg
 from Logger import Logger as Log
 
 Log().info('####### Setting up #######')
 
-#2022-08-10 09:17:02 INFO    : ####### Setting up #######
-#/datain/S2019847_0511_sv.zarr could not be found.
-#/predin/${SURVEY}_predictions_2.zarr could not be found.
-#/datain/S2019847_0511_bottom.zarr could not be found.
-#/dataout/${SURVEY}_report_2.zarr is set as report file name.
-
 # Set and check file directories
 dirs = ['/datain/', '/predin/', '/dataout/']
+
 datain, predin, dataout = dirs
 for d in dirs:
     _dir = os.path.expanduser(d)
@@ -30,6 +24,12 @@ grid_file_name = datain+os.getenv('SURVEY')+'_sv.zarr'
 pred_file_name = predin+os.getenv('PREDICTIONFILE')
 bot_file_name = datain+os.getenv('SURVEY')+'_bottom.zarr'
 report_file_name = dataout+os.getenv('REPORTFILE')
+
+# d = '/mnt/c/DATAscratch/crimac-scratch/2007/S2007205/ACOUSTIC/'
+# grid_file_name = d+'GRIDDED/S2007205_sv.zarr'
+# pred_file_name = d+'GRIDDED/S2007205_labels.zarr'
+# bot_file_name = d+'GRIDDED/S2007205_bottom.zarr'
+# report_file_name = d+'REPORTS/S2007205_report_1.zarr'
 
 # Check if input files exist
 files = [grid_file_name, pred_file_name, bot_file_name]
@@ -85,15 +85,15 @@ Log().info('####### Check zarr file input size #######')
 grid = xr.open_zarr(grid_file_name)
 pred = xr.open_zarr(pred_file_name)
 Log().info('####### Check _sv.zarr input size #######')
-print(grid)
+print(grid.dims)
 Log().info('####### Check _pred.zarr input size #######')
-print(pred)
+print(pred.dims)
 if bot_file_name is None:
     zarr_bot = None
 else:
     zarr_bot = xr.open_zarr(bot_file_name)
     Log().info('####### Check _bot.zarr input size #######')
-    print(zarr_bot)
+    print(zarr_bot.dims)
 
 #
 # Do the regridding
@@ -115,6 +115,9 @@ with rg.Reportgenerator(grid_file_name,
     rep.saveGridd(report_file_name)
     rep.saveImages(report_file_name+'.png')
     rep.saveReport(report_file_name+'.csv')
+
+# Consolidating metadata
+zarr.consolidate_metadata(report_file_name)
 
 #
 # Saving to ICESAcoustic format
