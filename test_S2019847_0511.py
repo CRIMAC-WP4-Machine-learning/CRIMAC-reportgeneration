@@ -1,6 +1,7 @@
-data_dir = '/mnt/d/DATAscratch/crimac-scratch/'
-sys.path.append('/home/nilsolav/repos/GitHub/CRIMAC-reportgeneration/reportgeneration/')
-sys.path.append('/home/nilsolav/repos/GitHub/CRIMAC-reportgeneration/')
+import sys
+data_dir = '/mnt/c/DATAscratch/crimac-scratch/'
+sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration/')
+sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/')
 
 import xarray as xr
 import dask
@@ -23,25 +24,22 @@ LSSS_report_file_name = data_dir + \
 #
 # Parameters
 #
+CLASSTRHRESHOLD = 0.8
+SV_THRESHOLD = -100
+OUTPUT_TYPE = 'zarr'
 
 # Ping axis
+# This one is not used by the regridder but used in the metadata
 PingAxisIntervalType = "distance"  # see http://vocab.ices.dk/?ref=1455
 PingAxisIntervalOrigin = "start"  # see http://vocab.ices.dk/?ref=1457
 PingAxisIntervalUnit = "nmi"  # see http://vocab.ices.dk/?ref=1456
 PingAxisInterval = 0.1
-# Ruben: refactor these to ICESAcoustic variable names:
-hitype = PingAxisIntervalUnit
-histep = PingAxisInterval
 
 # Channel
 ChannelDepthStart = 0  # Integration start depth (not implemented)
 ChannelDepthEnd = 500
-ChannelThickness = 10
-ChannelType = 'range'  # 'depth'
-# Ruben: refactor these:
-max_range = ChannelDepthEnd
-vistep = ChannelThickness
-vitype = ChannelType  # 'depth'
+ChannelThickness = 5
+ChannelType = 'depth'  # 'range'  # 'depth'
 
 # Values
 SvThreshold = 0  # db eller lineære verdiar? Not implemented.
@@ -49,28 +47,27 @@ Type = "C"  # C = sA, Nautical area scattering coefficient
 Unit = "m2nmi-2"  # see http://vocab.ices.dk/?ref=1460 |
 main_freq = 38000  # The frequency to integrate (could be a list in the future)
 
-# This is not needed. The allocation is based on the annotation
-# proportions and is not binary.
-threshold = 0.8  
 
 #
 # Do the regridding
 #
-rep = rg.Reportgenerator(grid_file_name,
-                         pred_file_name,
-                         bot_file_name,
-                         report_file_name,
-                         main_freq,
-                         threshold,
-                         vitype,
-                         vistep,
-                         hitype,
-                         histep,
-                         max_range)
-
-rep.save(report_file_name)
-rep.save(report_file_name+'.png')
-
+with rg.Reportgenerator(grid_file_name,
+                        pred_file_name,
+                        bot_file_name,
+                        report_file_name,
+                        main_freq,
+                        SvThreshold,
+                        ChannelType,
+                        ChannelThickness,
+                        PingAxisIntervalOrigin,
+                        PingAxisIntervalUnit,
+                        PingAxisInterval,
+                        ChannelDepthStart,
+                        ChannelDepthEnd) as rep:
+    
+    rep.saveGridd(report_file_name)
+    rep.saveImages(report_file_name+'.png')
+    rep.saveReport(report_file_name+'.csv')
 
 #
 # Saving to ICESAcoustic format
@@ -80,53 +77,6 @@ rep.save(report_file_name+'.png')
 grid = xr.open_zarr(grid_file_name)
 pred = xr.open_zarr(pred_file_name)
 report = xr.open_zarr(report_file_name)
-
-# (Ruben: This part needs refactored into the main classes)
-
-# Rename coordinates and variables
-report = report.rename({'latitude': 'Latitude',
-                        'longitude': 'Longitude',
-                        'ping_time': 'Time',
-                        'sv': 'value',
-                        'range': 'ChannelDepthUpper',
-                        'category': 'SaCategory'})
-
-# Add new coordinates
-N = len(report.Time)
-Latitude2 = np.append(report.Latitude[1:].values, np.NaN)  # Adress end point
-Longitude2 = np.append(report.Longitude[1:].values, np.NaN)  # Address last point
-Origin = np.repeat("start", N)
-Origin2 = np.repeat("end", N)
-BottomDepth = np.repeat(np.nan, N)  # Needs to be added from input data
-Validity = np.repeat("V", N)
-# Upper depth of the integrator should use the ChannelDepthStart
-ChannelDepthLower = np.append(
-    report.ChannelDepthUpper[1:].values, np.NaN)  # Adress end point
-
-report = report.assign_coords(Latitude2=("Time", Latitude2))
-report = report.assign_coords(Longitude2=("Time", Longitude2))
-report = report.assign_coords(Origin=("Time", Origin))
-report = report.assign_coords(Origin2=("Time", Origin2))
-report = report.assign_coords(BottomDepth=("Time", BottomDepth))
-report = report.assign_coords(Validity=("Time", Validity))
-report = report.assign_coords(ChannelDepthLower=("ChannelDepthUpper",
-                                                 ChannelDepthLower))
-
-# Ruben: Is this log distance? check this.
-# Arne Johannes: should we also have a Distance2?
-report = report.assign_coords(Distance=("Time", report.distance[1, :].values))
-
-# Add attributes
-report = report.assign_attrs({"PingAxisIntervalType": PingAxisIntervalType,
-                              "PingAxisIntervalOrigin": PingAxisIntervalOrigin,
-                              "PingAxisIntervalUnit": PingAxisIntervalUnit,
-                              "PingAxisInterval": PingAxisInterval,
-                              "Platform": "NaN",
-                              "LocalID": "NaN",
-                              "Type": Type,
-                              "Unit": Unit})
-
-# (Ruben: end refactoring)
 
 #
 # Flatten the data to a dataframe and write to file
@@ -149,13 +99,13 @@ df.to_csv(report_file_name+'.csv', index=True)
 # should be similar to Sa
 hres = (grid.sv.sel(frequency=38000) *
         pred.annotation.sel(category=27)).mean(dim='range').resample(
-            ping_time='H').mean() * max_range
+            ping_time='H').mean() * ChannelDepthEnd
 Sa_raw = 10*np.log10(hres+0.00000001)
 
-# Do the same for the output from the integrator. Should be similar'sih
+# Do the same for the output from the integrator. Should be similar'ish
 # as the plot from the original data
 lres = report.value.sel(SaCategory=27).mean(dim='ChannelDepthUpper').resample(
-            Time='H').mean() * max_range
+            Time='H').mean() * ChannelDepthEnd
 Sa_int = 10*np.log10(lres+0.00000001)
 
 fig, axes = plt.subplots(nrows=2)
