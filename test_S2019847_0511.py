@@ -3,6 +3,7 @@ data_dir = '/mnt/c/DATAscratch/crimac-scratch/'
 sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration/')
 sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/')
 
+import shutil
 import xarray as xr
 import dask
 import matplotlib.pyplot as plt
@@ -20,6 +21,11 @@ report_file_name = data_dir + \
                    '2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_1.zarr'
 LSSS_report_file_name = data_dir + \
                         '2019/S2019847_0511/ACOUSTIC/LSSS/Reports/ListUserFile20__L2887.0-3069.3.xml'
+
+# Delete old report
+if os.path.exists(report_file_name):
+    print('####### Old report exist: deleting #######')
+    shutil.rmtree(report_file_name)
 
 #
 # Parameters
