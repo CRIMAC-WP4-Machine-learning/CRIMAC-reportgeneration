@@ -15,15 +15,15 @@ class EKGridder(XGridder):
         self.PingAxisIntervalOrigin = PingAxisIntervalOrigin
         data = data.sel(range=slice(ChannelDepthStart, ChannelDepthEnd))
 
-        source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step)
-        source_h_bins, target_h_bins = self.calckBins(data, h_integration_type, h_step)
+        source_v_bins, target_v_bins = self.calckBins(data, v_integration_type, v_step, ChannelDepthStart, ChannelDepthEnd)
+        source_h_bins, target_h_bins = self.calckBins(data, h_integration_type, h_step, ChannelDepthStart, ChannelDepthEnd)
         super().__init__(target_v_bins, source_v_bins, target_h_bins, source_h_bins)
         self.h_integration_type = h_integration_type
         self.data = data
         self.max_range = ChannelDepthEnd
 
 
-    def calckBins(self, data, _type, step):
+    def calckBins(self, data, _type, step, ChannelDepthStart, ChannelDepthEnd):
 
         sbins = None
         tbins = None
@@ -89,7 +89,9 @@ class EKGridder(XGridder):
         elif _type == 'depth':
             # Range is converted to depth in Reportgenerator
             sbins = data['range']
-            tbins = xr.DataArray(np.arange(data['range'][0], data['range'][-1], step))
+            #tbins = xr.DataArray(np.arange(data['range'][0], data['range'][-1], step))
+            # changed target grid to support channel start and end:
+            tbins = xr.DataArray(np.arange(ChannelDepthStart, ChannelDepthEnd, step))
 
 
         else:
