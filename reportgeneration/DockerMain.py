@@ -132,7 +132,7 @@ report = xr.open_zarr(report_file_name)
 
 report = report.assign_attrs({
     "conversion_software_version": commit_sha,
-    "conversion_software_name": "CRIMAC reportgeneration (dockerized version)",
+    "conversion_software_name": "https://github.com/CRIMAC-WP4-Machine-learning/CRIMAC-reportgeneration (dockerized version)",
     "conversion_time": datetime.datetime.now().astimezone().replace(microsecond=0).isoformat()})
 
 if bot_file_name is None:
