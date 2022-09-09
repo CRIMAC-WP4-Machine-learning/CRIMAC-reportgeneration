@@ -137,11 +137,15 @@ report = report.assign_attrs({
 
 if bot_file_name is None:
     report = report.assign_attrs({
-        "source_filenames": [grid_file_name, pred_file_name]})
+        "source_filenames_sv": grid_file_name,
+        "source_filenames_labels": pred_file_name})
 else:
     zarr_bot = xr.open_zarr(bot_file_name)
     report = report.assign_attrs({
-        "source_filenames": [grid_file_name, pred_file_name, bot_file_name]})
+    report = report.assign_attrs({
+        "source_filenames_sv": grid_file_name,
+        "source_filenames_labels": pred_file_name,
+        "source_filenames_bottom": bot_file_name]})
 
 #
 # Flatten the data to a dataframe and write to file
