@@ -2,6 +2,7 @@ import os
 import shutil
 import xarray as xr
 import zarr
+import datetime
 # import sys
 # os.chdir('/home/nilsolav/repos/CRIMAC-reportgeneration')
 # sys.path.append('/home/nilsolav/repos/CRIMAC-reportgeneration/reportgeneration')
@@ -9,6 +10,7 @@ import reportgeneration.Reportgenerator as rg
 from Logger import Logger as Log
 
 Log().info('####### Setting up #######')
+commit_sha = os.getenv('COMMIT_SHA', 'NaN')
 
 # Set and check file directories
 dirs = ['/datain/', '/predin/', '/dataout/']
@@ -125,6 +127,21 @@ zarr.consolidate_metadata(report_file_name)
 
 # Reading the report & original data
 report = xr.open_zarr(report_file_name)
+
+# Add provenance information
+
+report = report.assign_attrs({
+    "conversion_software_version": commit_sha,
+    "conversion_software_name": "CRIMAC reportgeneration (dockerized version)",
+    "conversion_time": datetime.datetime.now().astimezone().replace(microsecond=0).isoformat()})
+
+if bot_file_name is None:
+    report = report.assign_attrs({
+        "source_filenames": [grid_file_name, pred_file_name]})
+else:
+    zarr_bot = xr.open_zarr(bot_file_name)
+    report = report.assign_attrs({
+        "source_filenames": [grid_file_name, pred_file_name, bot_file_name]})
 
 #
 # Flatten the data to a dataframe and write to file

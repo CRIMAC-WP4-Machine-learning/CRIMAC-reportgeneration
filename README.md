@@ -84,7 +84,7 @@ https://www.ices.dk/data/Documents/Acoustic/ICES_Acoustic_data_format_descriptio
 
 Build image from Dockerfile 
 
-`docker build --tag reportgeneration .`
+`docker build --build-arg=commit_sha=$(git rev-parse HEAD) --tag reportgeneration .`
 
 or pull from dockerhub
 
