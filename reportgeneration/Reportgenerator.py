@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
 import dask
+import datetime
 from Logger import Logger as Log
 from reportgeneration.EKGridder import EKGridder
 from pathlib import Path
@@ -14,22 +15,36 @@ from Resources import Resources as Res
 
 class Reportgenerator:
 
-    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50,PingAxisIntervalOrigin='start', htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500):
+    def __init__(self, grid_fname=None, pred_fname=None, bot_fname=None, out_fname=None, freq=38000, SvThreshold=-100, vtype='range', vstep=50,PingAxisIntervalOrigin='start', htype='ping', hstep=50, ChannelDepthStart=0, ChannelDepthEnd=500, commit_sha='NA'):
         Log().info('####### Reportgenerator ########')
         self.vtype = vtype
         self.vstep = vstep
         self.htype = htype
         self.hstep = hstep
+        self.commit_sha = commit_sha
         self.PingAxisIntervalOrigin = PingAxisIntervalOrigin
         self.out_fname = out_fname
         Res().setTmpDir(str(Path(self.out_fname).parent) + os.sep + 'tmp')
         zarr_grid = xr.open_zarr(grid_fname, chunks={'frequency': 'auto', 'ping_time': 'auto', 'range': -1})
         zarr_grid = zarr_grid.drop_vars(['angle_alongship', 'angle_athwartship'])
+        zarr_grid_attrs = zarr_grid.attrs
+        zarr_grid_attrs["filename"] = grid_fname
+        self.zarr_sv_attrs = zarr_grid_attrs
+
         zarr_pred = xr.open_zarr(pred_fname)
+        zarr_pred_attrs = zarr_pred.attrs
+        zarr_pred_attrs["filename"] = pred_fname
+        self.zarr_labels_attrs = zarr_pred_attrs
+        
         if bot_fname is None:
             zarr_bot = None
+            self.zarr_bot_attrs = None
+
         else:
             zarr_bot = xr.open_zarr(bot_fname)
+            zarr_bot_attrs = zarr_bot.attrs
+            zarr_bot_attrs["filename"] = bot_fname
+            self.zarr_bot_attrs = zarr_bot_attrs
 
         self.has_out_file = False
         # If there is a output file, start griding after last timestamp in file
@@ -298,10 +313,14 @@ class Reportgenerator:
             "Platform": "NaN",
             "LocalID": "NaN",
             "Type": "C",
-            "Unit": "m2nmi-2"})
-
+            "Unit": "m2nmi-2",
+            "conversion_software_version": self.commit_sha,
+            "conversion_software_name": "CRIMAC-reportgeneration",
+            "conversion_time": datetime.datetime.now().astimezone().replace(microsecond=0).isoformat(),
+            "source_filenames_labels": self.zarr_labels_attrs,
+            "source_filenames_bottom": self.zarr_bot_attrs,
+            "source_filenames_sv": self.zarr_sv_attrs})
         return ds
-
 
     def saveGridd(self,fname):
 

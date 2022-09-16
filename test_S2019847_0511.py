@@ -57,6 +57,8 @@ main_freq = 38000  # The frequency to integrate (could be a list in the future)
 #
 # Do the regridding
 #
+
+commit_sha = 'test script'
 with rg.Reportgenerator(grid_file_name,
                         pred_file_name,
                         bot_file_name,
@@ -69,7 +71,8 @@ with rg.Reportgenerator(grid_file_name,
                         PingAxisIntervalUnit,
                         PingAxisInterval,
                         ChannelDepthStart,
-                        ChannelDepthEnd) as rep:
+                        ChannelDepthEnd,
+                        commit_sha) as rep:
     
     rep.saveGridd(report_file_name)
     rep.saveImages(report_file_name+'.png')
@@ -90,8 +93,8 @@ report = xr.open_zarr(report_file_name)
 
 df = report.to_dataframe()
 # Add the attributes to the df
-for item in list(report.attrs.items()):
-    df[item[0]] = item[1]
+#for item in list(report.attrs.items()):
+#    df[item[0]] = item[1]
 # Save report to pandas tidy file
 df.to_csv(report_file_name+'.csv', index=True)
 
