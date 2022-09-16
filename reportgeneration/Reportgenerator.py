@@ -317,9 +317,9 @@ class Reportgenerator:
             "conversion_software_version": self.commit_sha,
             "conversion_software_name": "CRIMAC-reportgeneration",
             "conversion_time": datetime.datetime.now().astimezone().replace(microsecond=0).isoformat(),
-            "source_filenames_labels": self.zarr_labels_attrs,
-            "source_filenames_bottom": self.zarr_bot_attrs,
-            "source_filenames_sv": self.zarr_sv_attrs})
+            "source_filenames_labels": str(self.zarr_labels_attrs),
+            "source_filenames_bottom": str(self.zarr_bot_attrs),
+            "source_filenames_sv": str(self.zarr_sv_attrs)})
         return ds
 
     def saveGridd(self,fname):
