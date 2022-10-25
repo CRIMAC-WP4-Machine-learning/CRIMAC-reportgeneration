@@ -111,3 +111,38 @@ docker run -rm -it --name reportgeneration \
 --env REPORTFILE=$REPORTFILE \
 reportgeneration:latest
 ```
+
+### Testing setup on pallas
+
+```bash
+YEAR='2012'
+SURVEY='S2012837'
+DATAIN='/localscratch_hdd/crimac/'$YEAR'/'$SURVEY'/'
+DATAOUT='/localscratch_hdd/nilsolav/'$YEAR'/'$SURVEY'/'
+PREDICTIONFILE=${SURVEY}'_labels.zarr'
+REPORTFILE=${SURVEY}'_report_1.zarr'
+
+docker run -it --entrypoint sh --name reportgeneration_debug \
+-v "${DATAIN}/ACOUSTIC/GRIDDED":/datain \
+-v "${DATAIN}/ACOUSTIC/GRIDDED":/predin \
+-v "${DATAOUT}/ACOUSTIC/REPORTS"/:/dataout \
+--security-opt label=disable \
+--env SURVEY=$SURVEY \
+--env PREDICTIONFILE=$PREDICTIONFILE \
+--env REPORTFILE=$REPORTFILE \
+reportgeneration:latest
+```
+
+```
+apt-get update
+apt-get install zsh
+zsh
+apt-get install curl git emacs
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+emacs -nw
+```
+C-h v 'user-init-file' 
+https://elpy.readthedocs.io/en/latest/introduction.html
+M-x package-refresh-contents
+M-x package-install RET elpy RET 
+
