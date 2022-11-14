@@ -57,7 +57,7 @@ def report_xml2xarray(path_xml):
     quality = get_distance_frequency_values(root, 'quality', False, 'int')
     bubble_corr = get_distance_frequency_values(root, 'bubble_corr', False, 'float32')
 
-    # Get the full range of existing pelagic channels
+    # Get the full range of existing pelagic channel numbers
     all_pel_ch = list()
     for distance in root.find('distance_list').findall('distance'):
         for ch_type in distance.find('frequency').findall('ch_type'):
@@ -88,9 +88,10 @@ def report_xml2xarray(path_xml):
         sa_values.append(tmp)
     sa_values = np.array(sa_values, dtype='float32')
 
+    # We check that pelagic channel thickness is constant. If not, the code breaks and must be written differently.
     assert np.max(pel_ch_thickness) == np.min(pel_ch_thickness)
-    channel_depth_upper = range_pel_ch * np.max(pel_ch_thickness)
-    channel_depth_lower = channel_depth_upper + np.max(pel_ch_thickness)
+    channel_depth_lower = range_pel_ch * np.max(pel_ch_thickness)
+    channel_depth_upper = channel_depth_lower - np.max(pel_ch_thickness)
 
     coords = dict(
         category=('category', category),
