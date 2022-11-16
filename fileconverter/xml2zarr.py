@@ -112,17 +112,17 @@ def report_xml2xarray(path_xml):
     )
 
     data_vars = dict(
-        value=(('start_time', 'SaCategory', 'ChannelDepthUpper'), sa_values),
-        threshold=('start_time', threshold),
-        num_pel_ch=('start_time', num_pel_ch),
-        min_bot_depth=('start_time', min_bot_depth),
-        max_bot_depth=('start_time', max_bot_depth),
-        upper_interpret_depth=('start_time', upper_interpret_depth),
-        lower_interpret_depth=('start_time', lower_interpret_depth),
-        upper_integrator_depth=('start_time', upper_integrator_depth),
-        lower_integrator_depth=('start_time', lower_integrator_depth),
-        quality=('start_time', quality),
-        bubble_corr=('start_time', bubble_corr)
+        value=(('Time', 'SaCategory', 'ChannelDepthUpper'), sa_values),
+        threshold=('Time', threshold),
+        num_pel_ch=('Time', num_pel_ch),
+        min_bot_depth=('Time', min_bot_depth),
+        max_bot_depth=('Time', max_bot_depth),
+        upper_interpret_depth=('Time', upper_interpret_depth),
+        lower_interpret_depth=('Time', lower_interpret_depth),
+        upper_integrator_depth=('Time', upper_integrator_depth),
+        lower_integrator_depth=('Time', lower_integrator_depth),
+        quality=('Time', quality),
+        bubble_corr=('Time', bubble_corr)
     )
     return xr.Dataset(data_vars=data_vars, coords=coords)
 
