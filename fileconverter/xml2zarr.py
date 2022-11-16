@@ -134,5 +134,18 @@ if __name__ == '__main__':
     xmlfile = '/mnt/c/DATAscratch/crimac-scratch/2019/S2019842/ACOUSTIC/LSSS/REPORTS/echosounder_cruiseNumber_2019842_Vendla_2021-02-05T00.01.00.835Z.xml'
     zarrfile = 'S2018823_report_0.zarr'  # Naming convetion for files converted from standard estimates
     ds = report_xml2xarray(xmlfile)
-    xr.set_options(display_max_rows=50)
-    print(ds)
+    # For comparisons
+    reportfile = '/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_1_start.zarr'
+    ds0 = xr.open_zarr(reportfile)
+
+    # Do the comparisons
+    print('Keys from converted xml file:')
+    print(list(ds.keys()))
+    print('Keys from Integrator:')
+    print(list(ds0.keys()))
+    print('\n')
+    print('Coordinates from converted xml file:')
+    print(list(ds.coords))
+    print('Coordinates from Integrator:')
+    print(list(ds0.coords))
+   
