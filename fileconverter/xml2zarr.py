@@ -94,11 +94,11 @@ def report_xml2xarray(path_xml):
     channel_depth_upper = channel_depth_lower - np.max(pel_ch_thickness)
 
     coords = dict(
-        SaCategory=('category', category),
+        SaCategory=('SaCategory', category),
         Time=('Time', start_time),
         stop_time=('Time', stop_time),
         ChannelDepthUpper=('ChannelDepthUpper', channel_depth_upper),
-        ChannelDepthLower=('channel_depth_upper', channel_depth_lower),
+        ChannelDepthLower=('ChannelDepthUpper', channel_depth_lower),
         Distance=('Time', log_start),
         integrator_dist=('Time', integrator_dist),
         pel_ch_thickness=('Time', pel_ch_thickness),
@@ -112,7 +112,7 @@ def report_xml2xarray(path_xml):
     )
 
     data_vars = dict(
-        sa_values=(('start_time', 'category', 'channel_depth_upper'), sa_values),
+        value=(('start_time', 'SaCategory', 'ChannelDepthUpper'), sa_values),
         threshold=('start_time', threshold),
         num_pel_ch=('start_time', num_pel_ch),
         min_bot_depth=('start_time', min_bot_depth),
@@ -124,7 +124,6 @@ def report_xml2xarray(path_xml):
         quality=('start_time', quality),
         bubble_corr=('start_time', bubble_corr)
     )
-
     return xr.Dataset(data_vars=data_vars, coords=coords)
 
 
@@ -149,3 +148,14 @@ if __name__ == '__main__':
     print('Coordinates from Integrator:')
     print(list(ds0.coords))
    
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.title(' ')
+    plt.imshow(10 * np.log10(ds0.sel(SaCategory=27)['value'].T + 10e-20))
+    plt.axis('auto')
+
+    plt.subplot(2, 1, 2)
+    plt.title(' ')
+    plt.imshow(10 * np.log10(ds.sel(SaCategory=27)['value'].T + 10e-20))
+    plt.axis('auto')
+    plt.show()
