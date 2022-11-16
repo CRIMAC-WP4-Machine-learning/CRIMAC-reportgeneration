@@ -94,21 +94,21 @@ def report_xml2xarray(path_xml):
     channel_depth_upper = channel_depth_lower - np.max(pel_ch_thickness)
 
     coords = dict(
-        category=('category', category),
-        start_time=('start_time', start_time),
-        stop_time=('start_time', stop_time),
-        channel_depth_upper=('channel_depth_upper', channel_depth_upper),
-        channel_depth_lower=('channel_depth_upper', channel_depth_lower),
-        log_start=('start_time', log_start),
-        integrator_dist=('start_time', integrator_dist),
-        pel_ch_thickness=('start_time', pel_ch_thickness),
-        include_estimate=('start_time', include_estimate),
-        lat_start=('start_time', lat_start),
-        lat_stop=('start_time', lat_stop),
-        lon_start=('start_time', lon_start),
-        lon_stop=('start_time', lon_stop),
-        freq=('start_time', freq),
-        transceiver=('start_time', transceiver),
+        SaCategory=('category', category),
+        Time=('Time', start_time),
+        stop_time=('Time', stop_time),
+        ChannelDepthUpper=('ChannelDepthUpper', channel_depth_upper),
+        ChannelDepthLower=('channel_depth_upper', channel_depth_lower),
+        Distance=('Time', log_start),
+        integrator_dist=('Time', integrator_dist),
+        pel_ch_thickness=('Time', pel_ch_thickness),
+        include_estimate=('Time', include_estimate),
+        Latitude=('Time', lat_start),
+        Latitude2=('Time', lat_stop),
+        Longitude=('Time', lon_start),
+        Longitude2=('Time', lon_stop),
+        frequency=('Time', freq),
+        transceiver=('Time', transceiver),
     )
 
     data_vars = dict(
@@ -131,11 +131,8 @@ def report_xml2xarray(path_xml):
 if __name__ == '__main__':
 
     # test data
-    rawdir = '/mnt/c/DATAscratch/crimac-scratch/2018/S2018823/ACOUSTIC/REPORTS/'
-    xmlfile = 'echosounder_cruiseNumber_2018823_Eros_2021-02-05T00.06.32.305Z.xml'  # Official data
+    xmlfile = '/mnt/c/DATAscratch/crimac-scratch/2019/S2019842/ACOUSTIC/LSSS/REPORTS/echosounder_cruiseNumber_2019842_Vendla_2021-02-05T00.01.00.835Z.xml'
     zarrfile = 'S2018823_report_0.zarr'  # Naming convetion for files converted from standard estimates
-
-    path_xml = '' # rawdir + xmlfile ?
-    ds = report_xml2xarray(path_xml)
+    ds = report_xml2xarray(xmlfile)
     xr.set_options(display_max_rows=50)
     print(ds)
