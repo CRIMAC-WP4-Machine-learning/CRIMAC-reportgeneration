@@ -4,32 +4,37 @@ import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 
 
-def report_xml2xarray(path_xml):
+def report_xml2xarray(path_xml: str, frequency: int):
     '''
-    Convert LSSS report file from xml to xarray
+    Convert LSSS report file from xml to xarray for a specified frequency.
+
     :param path_xml: (str) path to xml file
-    :return: (xarray.Dataset) xarray dataset
+    :param frequency: (int) selected frequency in Hz
+    :return: (xrarray.Dataset) xarray dataset
     '''
 
-    def get_distance_values(root, variable: str, is_attrib: bool, dtype: str):
+    # Note:
+    # Some xml files has specified URI namespaces, e.g. xmlns="http://www.imr.no/formats/nmdechosounder/v1".
+    # This prepend all tags on parsing, e.g. from 'distance' to '{http://www.imr.no/formats/nmdechosounder/v1}distance'.
+    # We therefore use {*}-expressions such as '{*}distance' in searching methods to ignore any specified URI namespaces.
+
+    def get_distance_values(root: ET.Element, variable: str, is_attrib: bool, dtype: str):
         if is_attrib:
-            x = [distance.attrib[variable] for distance in root.find('distance_list').findall('distance')]
+            x = [distance.attrib[variable] for distance in root.find('{*}distance_list').findall('{*}distance')]
         else:
-            x = [distance.find(variable).text for distance in root.find('distance_list').findall('distance')]
+            x = [distance.find('{*}'+variable).text for distance in root.find('{*}distance_list').findall('{*}distance')]
         return np.array(x, dtype=dtype)
 
-    def get_distance_frequency_values(root, variable: str, is_attrib: bool, dtype: str):
-        if is_attrib:
-            x = [distance.find('frequency').attrib[variable] for distance in root.find('distance_list').findall('distance')]
-        else:
-            x = [distance.find('frequency').find(variable).text for distance in root.find('distance_list').findall('distance')]
+    def get_distance_frequency_values(root: ET.Element, variable: str, dtype: str):
+        x = [distance.find('{*}frequency[@freq=\"'+str(frequency)+'\"]').find('{*}'+variable).text for distance in
+             root.find('{*}distance_list').findall('{*}distance')]
         return np.array(x, dtype=dtype)
 
     tree = ET.parse(path_xml)
     root = tree.getroot()
 
     # Get list of the acoustic categories
-    category = sorted([int(acocat.attrib['acocat']) for acocat in root.find('acocat_list').findall('acocat')])
+    category = sorted([int(acocat.attrib['acocat']) for acocat in root.find('{*}acocat_list').findall('{*}acocat')])
 
     # Get data per distance
     log_start = get_distance_values(root, 'log_start', True, 'float32')
@@ -42,44 +47,40 @@ def report_xml2xarray(path_xml):
     lat_stop = get_distance_values(root, 'lat_stop', False, 'float32')
     lon_start = get_distance_values(root, 'lon_start', False, 'float32')
     lon_stop = get_distance_values(root, 'lon_stop', False, 'float32')
-    # Assuming only one freq and transceiver per distance
-    assert all([len(distance.findall('frequency')) == 1 for distance in root.find('distance_list').findall('distance')])
-    freq = get_distance_frequency_values(root, 'freq', True, 'int')
-    transceiver = get_distance_frequency_values(root, 'transceiver', True, 'int')
-    threshold = get_distance_frequency_values(root, 'threshold', False, 'float32')
-    num_pel_ch = get_distance_frequency_values(root, 'num_pel_ch', False, 'int')
-    min_bot_depth = get_distance_frequency_values(root, 'min_bot_depth', False, 'float32')
-    max_bot_depth = get_distance_frequency_values(root, 'max_bot_depth', False, 'float32')
-    upper_interpret_depth = get_distance_frequency_values(root, 'upper_interpret_depth', False, 'float32')
-    lower_interpret_depth = get_distance_frequency_values(root, 'lower_interpret_depth', False, 'float32')
-    upper_integrator_depth = get_distance_frequency_values(root, 'upper_integrator_depth', False, 'float32')
-    lower_integrator_depth = get_distance_frequency_values(root, 'lower_integrator_depth', False, 'float32')
-    quality = get_distance_frequency_values(root, 'quality', False, 'int')
-    bubble_corr = get_distance_frequency_values(root, 'bubble_corr', False, 'float32')
+    freq = np.float(frequency)
+    threshold = get_distance_frequency_values(root, 'threshold', 'float32')
+    num_pel_ch = get_distance_frequency_values(root, 'num_pel_ch', 'int')
+    min_bot_depth = get_distance_frequency_values(root, 'min_bot_depth', 'float32')
+    max_bot_depth = get_distance_frequency_values(root, 'max_bot_depth', 'float32')
+    upper_interpret_depth = get_distance_frequency_values(root, 'upper_interpret_depth', 'float32')
+    lower_interpret_depth = get_distance_frequency_values(root, 'lower_interpret_depth', 'float32')
+    upper_integrator_depth = get_distance_frequency_values(root, 'upper_integrator_depth', 'float32')
+    lower_integrator_depth = get_distance_frequency_values(root, 'lower_integrator_depth', 'float32')
+    quality = get_distance_frequency_values(root, 'quality', 'int')
+    bubble_corr = get_distance_frequency_values(root, 'bubble_corr', 'float32')
 
-    # Get the full range of existing pelagic channel numbers
+    # Get the full range of pelagic channel numbers (lowest to highest record)
     all_pel_ch = list()
-    for distance in root.find('distance_list').findall('distance'):
-        for ch_type in distance.find('frequency').findall('ch_type'):
-            if ch_type.attrib['type'] != 'P':
-                continue
-            for sa_by_acocat in ch_type.findall('sa_by_acocat'):
-                for sa in sa_by_acocat.findall('sa'):
+    for distance in root.find('{*}distance_list').findall('{*}distance'):
+        ch_type_p = distance.find('{*}frequency[@freq=\"'+str(frequency)+'\"]').find('{*}ch_type[@type="P"]')
+        if ch_type_p is not None:
+            for sa_by_acocat in ch_type_p.findall('{*}sa_by_acocat'):
+                for sa in sa_by_acocat.findall('{*}sa'):
                     all_pel_ch.append(sa.attrib['ch'])
     all_pel_ch = [int(ch) for ch in set(all_pel_ch)]
-    min_pel_ch = np.min(all_pel_ch)
-    max_pel_ch = np.max(all_pel_ch)
-    range_pel_ch = np.arange(min_pel_ch, max_pel_ch + 1)
+    assert len(all_pel_ch) > 0
+    range_pel_ch = np.arange(np.min(all_pel_ch), np.max(all_pel_ch) + 1)
 
     # Get the sa values per (distance, category, pelagic channel) - only use P (peleagic) values, discard B (bottom) values.
     sa_values = []
-    for distance in root.find('distance_list').findall('distance'):
+    for distance in root.find('{*}distance_list').findall('{*}distance'):
         tmp = {cat: {ch: 0.0 for ch in range_pel_ch} for cat in category}
-        for ch_type in distance.find('frequency').findall('ch_type'):
-            if ch_type.attrib['type'] != 'P':
-                continue
-            for sa_by_acocat in ch_type.findall('sa_by_acocat'):
-                for sa in sa_by_acocat.findall('sa'):
+        ch_type_p = distance.find('{*}frequency[@freq=\"'+str(frequency)+'\"]').find('{*}ch_type[@type="P"]')
+        if ch_type_p is not None:
+            # Todo: Should SaCategory be NaN or 0.0 if there is no record of <ch_type type="P"> in xml file?
+            # Todo (cont.): As per now: 0.0. I think this is right, because the xml file never report the zero-values.
+            for sa_by_acocat in ch_type_p.findall('{*}sa_by_acocat'):
+                for sa in sa_by_acocat.findall('{*}sa'):
                     cat = int(sa_by_acocat.attrib['acocat'])
                     ch = int(sa.attrib['ch'])
                     tmp[cat][ch] = sa.text
@@ -92,6 +93,7 @@ def report_xml2xarray(path_xml):
     assert np.max(pel_ch_thickness) == np.min(pel_ch_thickness)
     channel_depth_lower = range_pel_ch * np.max(pel_ch_thickness)
     channel_depth_upper = channel_depth_lower - np.max(pel_ch_thickness)
+    # Todo: Need to add transducer depth to get the correct channel depths?
 
     coords = dict(
         SaCategory=('SaCategory', category),
@@ -107,8 +109,7 @@ def report_xml2xarray(path_xml):
         Latitude2=('Time', lat_stop),
         Longitude=('Time', lon_start),
         Longitude2=('Time', lon_stop),
-        frequency=('Time', freq),
-        transceiver=('Time', transceiver),
+        frequency=freq
     )
 
     data_vars = dict(
@@ -132,7 +133,8 @@ if __name__ == '__main__':
     # test data
     xmlfile = '/mnt/c/DATAscratch/crimac-scratch/2019/S2019842/ACOUSTIC/LSSS/REPORTS/echosounder_cruiseNumber_2019842_Vendla_2021-02-05T00.01.00.835Z.xml'
     zarrfile = 'S2018823_report_0.zarr'  # Naming convetion for files converted from standard estimates
-    ds = report_xml2xarray(xmlfile)
+    frequency = 38000
+    ds = report_xml2xarray(xmlfile, frequency=frequency)
     # For comparisons
     reportfile = '/mnt/c/DATAscratch/crimac-scratch/2019/S2019847_0511/ACOUSTIC/REPORTS/S2019847_0511_report_1_start.zarr'
     ds0 = xr.open_zarr(reportfile)
