@@ -115,8 +115,8 @@ reportgeneration:latest
 ### Testing setup on pallas
 
 ```bash
-YEAR='2012'
-SURVEY='S2012837'
+YEAR='2015'
+SURVEY='S2015837'
 DATAIN='/localscratch_hdd/crimac/'$YEAR'/'$SURVEY'/'
 DATAOUT='/localscratch_hdd/nilsolav/'$YEAR'/'$SURVEY'/'
 PREDICTIONFILE=${SURVEY}'_labels.zarr'
